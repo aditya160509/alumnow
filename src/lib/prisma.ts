@@ -6,7 +6,10 @@ import { PrismaClient } from "../../generated/prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
-const databaseUrl = process.env.DATABASE_URL ?? (process.env.VERCEL ? "file:/tmp/alumnow.db" : "file:./prisma/dev.db");
+const configuredDatabaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.VERCEL && (!configuredDatabaseUrl || configuredDatabaseUrl.startsWith("file:"))
+  ? "file:/tmp/alumnow.db"
+  : configuredDatabaseUrl ?? "file:./prisma/dev.db";
 
 function sqlitePathFromUrl(url: string) {
   if (!url.startsWith("file:")) return null;
