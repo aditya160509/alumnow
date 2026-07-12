@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/Card";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { Users, CalendarDays, IndianRupee, Star } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
   const [totalAlumni, totalBookings, totalRevenueResult, pendingReviews, prevMonthAlumni, prevMonthBookings, prevMonthRevenue] = await Promise.all([
     prisma.alumniProfile.count(),

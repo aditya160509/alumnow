@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { PricingEditor } from "@/components/PricingEditor";
 import { ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlumniProfilePricingPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { AvailabilityEditor } from "@/components/AvailabilityEditor";
 import { ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlumniProfileAvailabilityPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

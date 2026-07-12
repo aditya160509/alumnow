@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, Edit3 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlumniProfileViewPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

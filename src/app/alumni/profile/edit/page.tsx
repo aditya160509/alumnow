@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlumniProfileEditPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");

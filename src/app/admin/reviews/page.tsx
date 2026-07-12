@@ -2,6 +2,8 @@ import { getPendingReviews } from "@/actions/admin.actions";
 import { AdminReviewModeration } from "@/components/AdminReviewModeration";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminReviewsPage() {
   const reviews = await getPendingReviews();
   return (

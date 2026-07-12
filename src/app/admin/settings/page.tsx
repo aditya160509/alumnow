@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { AdminPlatformSettings } from "@/components/AdminPlatformSettings";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSettingsPage() {
   const [upiSetting, qrSetting, stats] = await Promise.all([
     prisma.platformSetting.findUnique({ where: { key: "upi_id" } }),
