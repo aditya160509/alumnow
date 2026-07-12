@@ -1,0 +1,2 @@
+import { cn } from "@/lib/utils";
+export function Badge({ children, className, tone = "neutral" }: { children: React.ReactNode; className?: string; tone?: "neutral" | "accent" | "success" | "danger" }) { return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none", tone === "accent" && "bg-accent/15 text-accent-dark", tone === "success" && "bg-green-100 text-green-700", tone === "danger" && "bg-red-100 text-red-700", tone === "neutral" && "bg-muted text-primary", className)}>{children}</span>; }

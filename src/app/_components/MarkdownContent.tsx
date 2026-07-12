@@ -1,0 +1,2 @@
+import ReactMarkdown from "react-markdown";
+export function MarkdownContent({ content }: { content: string }) { return <div className="prose prose-slate max-w-[65ch] prose-headings:font-semibold prose-headings:text-primary prose-a:text-primary prose-strong:text-primary"><ReactMarkdown>{content}</ReactMarkdown></div>; }

@@ -1,0 +1,301 @@
+"use client";
+import { useState } from "react";
+import { SlidersHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import type { AlumniFilters } from "@/types";
+
+type Options = { universities: string[]; countries: string[]; courses: string[] };
+
+const qsTierOptions = [
+  { value: "top10", label: "Top 10" },
+  { value: "top20", label: "Top 20" },
+  { value: "top50", label: "Top 50" },
+  { value: "top100", label: "Top 100" },
+  { value: "top200", label: "Top 200" },
+  { value: "unranked", label: "Unranked" },
+];
+
+const GRAD_YEAR_MIN = 2015;
+const GRAD_YEAR_MAX = new Date().getFullYear();
+
+function FilterSection({ title, count, defaultOpen = true, children }: { title: string; count?: number; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-[var(--color-border-light)] last:border-b-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
+      >
+        <span>{title}</span>
+        <span className="flex items-center gap-1.5">
+          {count != null && count > 0 && (
+            <span className="text-[10px] font-bold text-[var(--color-primary)] bg-primary/10 px-1.5 py-0.5 rounded-full">{count}</span>
+          )}
+          {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </span>
+      </button>
+      {open && <div className="pb-3">{children}</div>}
+    </div>
+  );
+}
+
+function ChipGroup({ options, selected, onChange }: { options: { value: string; label: string }[]; selected?: string[]; onChange: (vals: string[]) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const active = selected?.includes(opt.value) ?? false;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(active ? selected!.filter((v) => v !== opt.value) : [...(selected ?? []), opt.value])}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${active ? "chip-active" : "chip-inactive"}`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PillGroup<T extends string>({ options, selected, onChange }: { options: { value: T; label: string }[]; selected: T; onChange: (v: T) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt, index) => (
+        <button
+          key={`${opt.value}-${index}`}
+          onClick={() => onChange(opt.value)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${selected === opt.value ? "chip-active" : "chip-inactive"}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DualRangeSlider({ min, max, value, onChange }: { min: number; max: number; value: [number, number] | undefined; onChange: (v: [number, number] | undefined) => void }) {
+  const [local, setLocal] = useState<[number, number]>(value ?? [min, max]);
+  const [minVal, maxVal] = local;
+  const active = value != null;
+
+  const updateMin = (v: number) => {
+    const next: [number, number] = [Math.min(v, maxVal - 1), maxVal];
+    setLocal(next);
+    if (next[0] !== min || next[1] !== max) onChange(next);
+    else onChange(undefined);
+  };
+  const updateMax = (v: number) => {
+    const next: [number, number] = [minVal, Math.max(v, minVal + 1)];
+    setLocal(next);
+    if (next[0] !== min || next[1] !== max) onChange(next);
+    else onChange(undefined);
+  };
+  const range = max - min;
+  const leftPct = ((minVal - min) / range) * 100;
+  const rightPct = ((max - maxVal) / range) * 100;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+          {minVal} – {maxVal}
+        </span>
+        {active && (
+          <button
+            onClick={() => { setLocal([min, max]); onChange(undefined); }}
+            className="text-[11px] text-[var(--color-primary)] hover:underline font-medium"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="dual-slider">
+        <div className="track" style={{ left: `${leftPct}%`, right: `${rightPct}%` }} />
+        <input type="range" min={min} max={max} value={minVal} onChange={(e) => updateMin(Number(e.target.value))} />
+        <input type="range" min={min} max={max} value={maxVal} onChange={(e) => updateMax(Number(e.target.value))} />
+      </div>
+    </div>
+  );
+}
+
+export function FilterPanel({
+  filters,
+  options,
+  onChange,
+  onClear,
+  resultCount,
+}: {
+  filters: AlumniFilters;
+  options: Options;
+  onChange: (next: Partial<AlumniFilters>) => void;
+  onClear: () => void;
+  resultCount?: number;
+}) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const activeCount = [
+    filters.university,
+    filters.country,
+    filters.course,
+    filters.studyLevel && filters.studyLevel !== "both" ? filters.studyLevel : null,
+    (filters.sessionType && filters.sessionType !== "both") ? filters.sessionType : null,
+    filters.gradYearMin || filters.gradYearMax ? "grad" : null,
+    filters.qsTiers?.length ? `qs-${filters.qsTiers.length}` : null,
+    (filters.availability && filters.availability !== "any") ? filters.availability : null,
+  ].filter(Boolean).length;
+
+  const countryList = options.countries.map((c) => ({ value: c, label: c }));
+
+  const content = (
+    <div className="rounded-2xl border border-[var(--color-border)] bg-white overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-[var(--color-border-light)]">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-[var(--color-text)]">Filters</h2>
+            {resultCount != null && (
+              <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{resultCount} result{resultCount !== 1 ? "s" : ""}</p>
+            )}
+          </div>
+          {activeCount > 0 && (
+            <button onClick={onClear} className="text-xs font-semibold text-[var(--color-primary)] hover:underline transition-all">
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter sections */}
+      <div className="px-5">
+        {/* University */}
+        <FilterSection title="University" count={filters.university ? 1 : 0}>
+          <input
+            type="text"
+            placeholder="Search universities..."
+            className="h-9 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-[var(--color-text-tertiary)]"
+            value={filters.university ?? ""}
+            onChange={(e) => onChange({ university: e.target.value || undefined })}
+          />
+        </FilterSection>
+
+        {/* Country */}
+        <FilterSection title="Country" count={filters.country ? 1 : 0}>
+          <ChipGroup options={countryList} selected={filters.country ? [filters.country] : []} onChange={(vals) => onChange({ country: vals[vals.length - 1] || undefined })} />
+        </FilterSection>
+
+        {/* Course */}
+        <FilterSection title="Course" count={filters.course ? 1 : 0}>
+          <input
+            type="text"
+            placeholder="Search courses..."
+            className="h-9 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-[var(--color-text-tertiary)]"
+            value={filters.course ?? ""}
+            onChange={(e) => onChange({ course: e.target.value || undefined })}
+          />
+        </FilterSection>
+
+        {/* QS Ranking */}
+        <FilterSection title="QS Ranking" count={filters.qsTiers?.length}>
+          <ChipGroup options={qsTierOptions} selected={filters.qsTiers} onChange={(vals) => onChange({ qsTiers: vals.length > 0 ? vals : undefined })} />
+        </FilterSection>
+
+        {/* Graduation Year */}
+        <FilterSection title="Graduation Year" count={filters.gradYearMin || filters.gradYearMax ? 1 : 0}>
+          <DualRangeSlider
+            min={GRAD_YEAR_MIN}
+            max={GRAD_YEAR_MAX}
+            value={filters.gradYearMin || filters.gradYearMax ? [filters.gradYearMin ?? GRAD_YEAR_MIN, filters.gradYearMax ?? GRAD_YEAR_MAX] : undefined}
+            onChange={(val) => onChange({ gradYearMin: val?.[0], gradYearMax: val?.[1] })}
+          />
+        </FilterSection>
+
+        {/* Study Level */}
+        <FilterSection title="Study Level">
+          <PillGroup
+            options={[
+              { value: undefined as any, label: "All" },
+              { value: "undergraduate" as const, label: "Undergrad" },
+              { value: "postgraduate" as const, label: "Postgrad" },
+            ]}
+            selected={filters.studyLevel ?? "both"}
+            onChange={(v) => onChange({ studyLevel: v === "both" ? undefined : v })}
+          />
+        </FilterSection>
+
+        {/* Session Type */}
+        <FilterSection title="Session Type">
+          <PillGroup
+            options={[
+              { value: "both" as const, label: "All" },
+              { value: "1:1" as const, label: "1-on-1" },
+              { value: "group" as const, label: "Group" },
+            ]}
+            selected={filters.sessionType ?? "both"}
+            onChange={(v) => onChange({ sessionType: v === "both" ? undefined : v })}
+          />
+        </FilterSection>
+
+        {/* Availability */}
+        <FilterSection title="Availability">
+          <PillGroup
+            options={[
+              { value: "any" as const, label: "Any" },
+              { value: "this_week" as const, label: "This week" },
+              { value: "this_month" as const, label: "This month" },
+            ]}
+            selected={filters.availability ?? "any"}
+            onChange={(v) => onChange({ availability: v === "any" ? undefined : v })}
+          />
+        </FilterSection>
+      </div>
+
+      {/* Apply button */}
+      <div className="px-5 py-4">
+        <Button
+          className="w-full rounded-lg"
+          onClick={() => { if (drawerOpen) setDrawerOpen(false); }}
+        >
+          Apply Filters
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile trigger */}
+      <div className="lg:hidden mb-4">
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-all"
+        >
+          <SlidersHorizontal size={15} />
+          Filters
+          {activeCount > 0 && (
+            <span className="ml-1 rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-white">{activeCount}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-4 shadow-2xl animate-slide-up">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <h2 className="font-semibold text-[var(--color-text)]">Filters</h2>
+              <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg hover:bg-primary/5 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            {content}
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">{content}</div>
+    </>
+  );
+}
