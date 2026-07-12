@@ -23,64 +23,69 @@ export async function getSessionOfferingWithAlumni(offeringId: string) {
 }
 
 export async function createBookingDraft(input: unknown) {
-  let userId: string;
   try {
-    userId = await studentId();
-  } catch {
-    return { success: false, error: "Please sign in as a student." } as const;
-  }
+    let userId: string;
+    try {
+      userId = await studentId();
+    } catch {
+      return { success: false, error: "Please sign in as a student." } as const;
+    }
 
-  const parsed = bookingDraftSchema.safeParse(input);
-  if (!parsed.success)
-    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid slot." } as const;
+    const parsed = bookingDraftSchema.safeParse(input);
+    if (!parsed.success)
+      return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid slot." } as const;
 
-  const data = parsed.data;
+    const data = parsed.data;
 
-  const offering = await prisma.sessionTypeOffering.findFirst({
-    where: { id: data.sessionTypeOfferingId, alumniId: data.alumniId },
-    include: { alumni: true },
-  });
-  if (!offering)
-    return { success: false, error: "Session is no longer available." } as const;
+    const offering = await prisma.sessionTypeOffering.findFirst({
+      where: { id: data.sessionTypeOfferingId, alumniId: data.alumniId },
+      include: { alumni: true },
+    });
+    if (!offering)
+      return { success: false, error: "Session is no longer available. Please refresh and choose another session." } as const;
 
-  const conflict = await prisma.booking.findFirst({
-    where: {
-      alumniId: data.alumniId,
-      status: { not: "cancelled" },
-      scheduledStartAt: { lt: new Date(data.scheduledEndAt) },
-      scheduledEndAt: { gt: new Date(data.scheduledStartAt) },
-    },
-  });
-  if (conflict)
-    return {
-      success: false,
-      error: "That time was just booked. Please choose another slot.",
-    } as const;
-
-  const booking = await prisma.$transaction(async (tx) => {
-    const b = await tx.booking.create({
-      data: {
-        studentId: userId,
+    const conflict = await prisma.booking.findFirst({
+      where: {
         alumniId: data.alumniId,
-        sessionTypeOfferingId: data.sessionTypeOfferingId,
-        scheduledStartAt: new Date(data.scheduledStartAt),
-        scheduledEndAt: new Date(data.scheduledEndAt),
-        status: "pending_payment",
-      },
-      include: { alumni: true, sessionType: true },
-    });
-
-    await tx.payment.create({
-      data: {
-        bookingId: b.id,
-        amountPaise: offering.pricePaise,
+        status: { not: "cancelled" },
+        scheduledStartAt: { lt: new Date(data.scheduledEndAt) },
+        scheduledEndAt: { gt: new Date(data.scheduledStartAt) },
       },
     });
+    if (conflict)
+      return {
+        success: false,
+        error: "That time was just booked. Please choose another slot.",
+      } as const;
 
-    return b;
-  });
+    const booking = await prisma.$transaction(async (tx) => {
+      const b = await tx.booking.create({
+        data: {
+          studentId: userId,
+          alumniId: data.alumniId,
+          sessionTypeOfferingId: data.sessionTypeOfferingId,
+          scheduledStartAt: new Date(data.scheduledStartAt),
+          scheduledEndAt: new Date(data.scheduledEndAt),
+          status: "pending_payment",
+        },
+        include: { alumni: true, sessionType: true },
+      });
 
-  return { success: true, data: booking } as const;
+      await tx.payment.create({
+        data: {
+          bookingId: b.id,
+          amountPaise: offering.pricePaise,
+        },
+      });
+
+      return b;
+    });
+
+    return { success: true, data: booking } as const;
+  } catch (error) {
+    console.error("createBookingDraft failed", error);
+    return { success: false, error: "Could not create booking. Please refresh and try again." } as const;
+  }
 }
 
 export async function getBookingById(id: string) {

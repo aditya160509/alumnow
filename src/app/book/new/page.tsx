@@ -260,17 +260,22 @@ function BookSessionContent() {
     setError("");
     const start = new Date(`${date}T${time}:00`);
     const end = new Date(start.getTime() + duration * 60 * 1000);
-    const result = await createBookingDraft({
-      alumniId: alumni!.id,
-      sessionTypeOfferingId: selectedOffering.id,
-      scheduledStartAt: start.toISOString(),
-      scheduledEndAt: end.toISOString(),
-    });
-    if (!result.success || !result.data) {
-      setError(result.error ?? "Could not create booking.");
+    try {
+      const result = await createBookingDraft({
+        alumniId: alumni!.id,
+        sessionTypeOfferingId: selectedOffering.id,
+        scheduledStartAt: start.toISOString(),
+        scheduledEndAt: end.toISOString(),
+      });
+      if (!result.success || !result.data) {
+        setError(result.error ?? "Could not create booking.");
+        setSubmitting(false);
+      } else {
+        router.push(`/book/${result.data.id}`);
+      }
+    } catch {
+      setError("Could not create booking. Please refresh and try again.");
       setSubmitting(false);
-    } else {
-      router.push(`/book/${result.data.id}`);
     }
   };
 
