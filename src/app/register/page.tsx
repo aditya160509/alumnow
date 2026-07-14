@@ -56,7 +56,7 @@ function StudentForm({ onStatusChange }: { onStatusChange: (s: string) => void }
     if (data.password !== data.confirmPassword) { setError("Passwords don't match"); return; }
     if (!tosAccepted) { setError("You must accept the Terms of Service"); return; }
     setStatus("creating"); onStatusChange("creating");
-    const r = await signup({ ...data, dateOfBirth: null, currentGrade: "AS", school: "Demo School" });
+    const r = await signup({ ...data, dateOfBirth: null, currentGrade: "AS", school: "Demo School", tosAccepted: true });
     if (r.error) { setError(r.error); setStatus("idle"); onStatusChange("idle"); return; }
     setStatus("verifying"); onStatusChange("verifying");
     await new Promise((r) => setTimeout(r, 800));

@@ -102,6 +102,7 @@ export async function login(input: { email: string; password: string }): Promise
 export async function signupAlumni(input: {
   fullName: string; email: string; phone: string; password: string;
   universityName: string; course: string; country: string; graduationYearJbcn: number; bio?: string; profilePhotoUrl?: string;
+  languages?: string;
   sessionTypes: { type: string; pricePaise: number; maxParticipants?: number; descriptionOneLiner?: string }[];
   availability: { dayOfWeek: number; startTime: string; endTime: string }[];
 }): Promise<ApiResponse<{ redirectTo: string }>> {
@@ -124,6 +125,7 @@ export async function signupAlumni(input: {
             country: input.country,
             graduationYearJbcn: input.graduationYearJbcn,
             bio: input.bio,
+            languages: input.languages ? JSON.stringify(input.languages.split(",").map((l: string) => l.trim()).filter(Boolean)) : "[]",
             sessionTypes: { create: input.sessionTypes.map((st) => ({ type: st.type, pricePaise: st.pricePaise, maxParticipants: st.maxParticipants ?? 1, descriptionOneLiner: st.descriptionOneLiner })) },
             availability: { create: input.availability.map((a) => ({ dayOfWeek: a.dayOfWeek, startTime: a.startTime, endTime: a.endTime })) },
           },

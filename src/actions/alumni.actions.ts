@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { hash } from "bcrypt-ts";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
@@ -18,8 +19,9 @@ export async function applyAsAlumni(input: unknown): Promise<ApiResponse<{ redir
   if (exists) return { success: false, error: "An account with this email already exists. Try logging in." };
   const langStr = parsed.data.languages ?? "";
   const languages = JSON.stringify(langStr.split(",").map((item) => item.trim()).filter(Boolean));
+  const passwordHash = await hash(parsed.data.password, 12);
   const user = await prisma.$transaction(async (tx) => {
-    const account = await tx.user.create({ data: { email: parsed.data.email, phone: parsed.data.phone, role: "alumnus", passwordHash: "", emailVerifiedAt: new Date() } });
+    const account = await tx.user.create({ data: { email: parsed.data.email, phone: parsed.data.phone, role: "alumnus", passwordHash, emailVerifiedAt: new Date() } });
     await tx.alumniProfile.create({ data: { userId: account.id, fullName: parsed.data.fullName, profilePhotoUrl: `https://picsum.photos/seed/${encodeURIComponent(parsed.data.fullName)}/400/400`, universityName: parsed.data.universityName, course: parsed.data.course, country: parsed.data.country, graduationYearJbcn: parsed.data.graduationYearJbcn, bio: parsed.data.bio, languages, verificationStatus: "approved", isVerifiedJbcnAlumnus: true, avgResponseTimeHours: 6, sessionTypes: { create: [{ type: "call_30", pricePaise: 29900, descriptionOneLiner: "A focused 30-minute conversation" }, { type: "call_45", pricePaise: 39900, descriptionOneLiner: "A balanced 45-minute conversation" }, { type: "call_60", pricePaise: 49900, descriptionOneLiner: "A deeper one-hour conversation" }, { type: "group_40", pricePaise: 99900, maxParticipants: 6, descriptionOneLiner: "Learn together in a small group" }] }, availability: { create: [{ dayOfWeek: 1, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 2, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 3, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 5, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 6, startTime: "10:00", endTime: "13:00" }] } } });
     return account;
   });
@@ -134,14 +136,35 @@ export async function getAlumniById(id: string) {
   }
 }
 
-export async function getFilterOptions() {
+export async function getFilterOptions(country?: string) {
   try {
+    const baseWhere: Record<string, unknown> = { verificationStatus: "approved" };
+
     const [universities, countries, courses] = await Promise.all([
-      prisma.alumniProfile.findMany({ where: { verificationStatus: "approved" }, distinct: ["universityName"], select: { universityName: true }, orderBy: { universityName: "asc" } }),
-      prisma.alumniProfile.findMany({ where: { verificationStatus: "approved" }, distinct: ["country"], select: { country: true }, orderBy: { country: "asc" } }),
-      prisma.alumniProfile.findMany({ where: { verificationStatus: "approved" }, distinct: ["course"], select: { course: true }, orderBy: { course: "asc" } }),
+      prisma.alumniProfile.findMany({
+        where: country ? { ...baseWhere, country } : baseWhere,
+        distinct: ["universityName"],
+        select: { universityName: true },
+        orderBy: { universityName: "asc" }
+      }),
+      prisma.alumniProfile.findMany({
+        where: baseWhere,
+        distinct: ["country"],
+        select: { country: true },
+        orderBy: { country: "asc" }
+      }),
+      prisma.alumniProfile.findMany({
+        where: country ? { ...baseWhere, country } : baseWhere,
+        distinct: ["course"],
+        select: { course: true },
+        orderBy: { course: "asc" }
+      }),
     ]);
-    return { universities: universities.map((u) => u.universityName), countries: countries.map((c) => c.country), courses: courses.map((c) => c.course) };
+    return {
+      universities: universities.map((u) => u.universityName),
+      countries: countries.map((c) => c.country),
+      courses: courses.map((c) => c.course)
+    };
   } catch (error) {
     console.error("getFilterOptions error:", error);
     return { universities: [], countries: [], courses: [] };

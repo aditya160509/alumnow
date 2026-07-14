@@ -60,7 +60,13 @@ export default function LoginPage() {
     await signInWithRedirect(email, password);
   }
 
-  async function handleGoogleSignIn() { await signIn("google", { redirectTo: "/dashboard" }); }
+  async function handleGoogleSignIn() {
+    try {
+      await signIn("google", { redirectTo: "/dashboard" });
+    } catch {
+      setError("Google Sign-In is not configured. Please use email and password.");
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">

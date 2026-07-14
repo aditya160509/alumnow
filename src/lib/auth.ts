@@ -6,6 +6,10 @@ import { compare } from "bcrypt-ts";
 import { prisma } from "./prisma";
 import { loginSchema } from "./validation";
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID ?? process.env.AUTH_GOOGLE_ID ?? "";
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET ?? process.env.AUTH_GOOGLE_SECRET ?? "";
+const googleConfigured = Boolean(googleClientId && googleClientSecret);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
@@ -35,10 +39,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       },
     }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? process.env.AUTH_GOOGLE_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? process.env.AUTH_GOOGLE_SECRET ?? "",
-    }),
+    ...(googleConfigured ? [
+      Google({
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      }),
+    ] : []),
   ],
   callbacks: {
     async jwt({ token, user }) {

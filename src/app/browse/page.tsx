@@ -118,8 +118,8 @@ function BrowsePageContent() {
   });
 
   const optionsQuery = useQuery({
-    queryKey: OPTIONS_KEY,
-    queryFn: getFilterOptions,
+    queryKey: [...OPTIONS_KEY, filters.country],
+    queryFn: () => getFilterOptions(filters.country),
     staleTime: 300000,
   });
 
