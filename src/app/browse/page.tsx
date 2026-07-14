@@ -14,6 +14,7 @@ import type { AlumniCardData, AlumniFilters } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, LayoutGrid, Heart, Sparkles, ArrowUpDown, ChevronDown } from "lucide-react";
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const ALUMNI_KEY = ["alumni"];
 const SAVED_KEY = ["saved-alumni"];
@@ -44,8 +45,6 @@ const sortOptions = [
   { value: "relevance", label: "Relevance" },
   { value: "rating", label: "Rating" },
   { value: "newest", label: "Newest" },
-  { value: "price_asc", label: "Price: Low" },
-  { value: "price_desc", label: "Price: High" },
 ];
 
 function filtersFromSearchParams(sp: URLSearchParams): AlumniFilters {
@@ -86,13 +85,15 @@ const activeFilterLabels: Record<string, (v: any) => string> = {
 
 export default function BrowsePage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[var(--color-bg)] pt-[88px] flex items-center justify-center">
-        <Skeleton className="h-8 w-48 rounded-lg" />
-      </div>
-    }>
-      <BrowsePageContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={
+        <div className="min-h-screen bg-[var(--color-bg)] pt-[88px] flex items-center justify-center">
+          <Skeleton className="h-8 w-48 rounded-lg" />
+        </div>
+      }>
+        <BrowsePageContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

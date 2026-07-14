@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -100,7 +101,9 @@ function generateRatingDist(bookings: any[]) {
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   const w = 72; const h = 24;
   const max = Math.max(...data, 1);
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
+  const pts = data.length < 2
+    ? `0,${h - ((data[0] ?? 0) / max) * h}`
+    : data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
       <polyline fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" points={pts} style={{ filter: `drop-shadow(0 0 3px ${color}40)` }} />
@@ -169,6 +172,14 @@ const CHART_ANIM = { animationBegin: 200, animationDuration: 600 };
 
 /* ─── Dashboard Page ─── */
 export default function DashboardPage() {
+  return (
+    <ErrorBoundary>
+      <DashboardContent />
+    </ErrorBoundary>
+  );
+}
+
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [bookings, setBookings] = useState<any[]>([]);
@@ -180,7 +191,7 @@ export default function DashboardPage() {
   const [showInsight, setShowInsight] = useState(true);
 
   useEffect(() => {
-    if (session?.user && (session.user as any).role === "alumnus") setDashboardMode("alumnus");
+    if (session?.user?.role === "alumnus") setDashboardMode("alumnus");
   }, [session]);
 
   useEffect(() => {
@@ -393,7 +404,7 @@ export default function DashboardPage() {
                       : "Ready for your upcoming mentoring sessions?"}
                 </p>
               </div>
-              {(session.user as any).role === "alumnus" && (
+              {session.user?.role === "alumnus" && (
                 <div className="flex bg-white/10 p-0.5 rounded-[10px] mr-2">
                   <button onClick={() => setDashboardMode("alumnus")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-[8px] transition-all duration-150 ${dashboardMode === "alumnus" ? "bg-white text-[#0F0F10] shadow-sm" : "text-white/60 hover:text-white"}`}>Alumni view</button>

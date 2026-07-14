@@ -1,15 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 export function CountdownTimer({ target }: { target: string | Date }) {
-  const [remaining, setRemaining] = useState(
-    Math.max(0, new Date(target).getTime() - Date.now()),
-  );
+  const [remaining, setRemaining] = useState(0);
   useEffect(() => {
-    const id = setInterval(
-      () =>
-        setRemaining(Math.max(0, new Date(target).getTime() - Date.now())),
-      1000,
-    );
+    const tick = () => setRemaining(Math.max(0, new Date(target).getTime() - Date.now()));
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
   const total = Math.floor(remaining / 1000);

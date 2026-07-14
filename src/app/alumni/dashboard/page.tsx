@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { getAlumniBookings } from "@/actions/booking.actions";
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Sidebar } from "@/components/Sidebar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
@@ -120,7 +121,9 @@ const STATUS_MAP: Record<string, { label: string; classes: string }> = {
 function Sparkline({ data, color }: { data: number[]; color: string }) {
   const w = 72; const h = 24;
   const max = Math.max(...data, 1);
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
+  const pts = data.length < 2
+    ? `0,${h - (data[0] ?? 0 / max) * h}`
+    : data.map((v, i) => `${(i / (data.length - 1)) * w},${h - (v / max) * h}`).join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
       <polyline fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" points={pts} style={{ filter: `drop-shadow(0 0 3px ${color}40)` }} />
@@ -155,6 +158,14 @@ function ChartTooltip({ active, payload, label }: any) {
 }
 
 export default function AlumniDashboardPage() {
+  return (
+    <ErrorBoundary>
+      <AlumniDashboardContent />
+    </ErrorBoundary>
+  );
+}
+
+function AlumniDashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [bookings, setBookings] = useState<any[]>([]);
@@ -266,7 +277,7 @@ export default function AlumniDashboardPage() {
     );
   }
 
-  const userName = (session.user as any)?.name?.split(" ")[0] || "there";
+  const userName = session.user?.name?.split(" ")[0] || "there";
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0B] transition-colors duration-150">
@@ -288,8 +299,8 @@ export default function AlumniDashboardPage() {
             <div className="relative flex items-center gap-4">
               <div className="relative">
                 <img
-                  src={(session.user as any)?.image ?? `https://picsum.photos/seed/${(session.user as any).id}/100/100`}
-                  alt={(session.user as any)?.name ?? "Profile"}
+                  src={session.user?.image ?? `https://picsum.photos/seed/${session.user.id}/100/100`}
+                  alt={session.user?.name ?? "Profile"}
                   className="h-[52px] w-[52px] rounded-[12px] border-2 border-white/[0.12] object-cover shadow-[0_4px_16px_rgba(0,0,0,0.3)]"
                 />
                 <span className="absolute -bottom-0.5 -right-0.5 w-[13px] h-[13px] rounded-full bg-[#16A34A] border-[2.5px] border-[#0F0F10] shadow-[0_0_6px_rgba(22,163,74,0.5)]" />

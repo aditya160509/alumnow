@@ -85,10 +85,6 @@ export async function listAlumni(filters: AlumniListFilters = {}) {
       orderBy = { ratingAvg: { sort: "desc", nulls: "last" } };
     } else if (filters.sortBy === "newest") {
       orderBy = { id: "desc" };
-    } else if (filters.sortBy === "price_asc") {
-      orderBy = { id: "asc" };
-    } else if (filters.sortBy === "price_desc") {
-      orderBy = { id: "desc" };
     }
 
     const [items, total] = await Promise.all([

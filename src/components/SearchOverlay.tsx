@@ -42,6 +42,8 @@ export function SearchOverlay({ open, onOpenChange, value, onChange }: Props) {
   const [inputValue, setInputValue] = useState(value);
   const shiftRef = useRef(false);
   const skipDebounce = useRef(true);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
@@ -65,10 +67,10 @@ export function SearchOverlay({ open, onOpenChange, value, onChange }: Props) {
       return;
     }
     const timer = setTimeout(() => {
-      onChange(inputValue);
+      onChangeRef.current(inputValue);
     }, 400);
     return () => clearTimeout(timer);
-  }, [inputValue, onChange]);
+  }, [inputValue]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

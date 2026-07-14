@@ -149,7 +149,7 @@ export interface AlumniFilters {
   availability?: "this_week" | "this_month" | "any";
   sessionType?: "1:1" | "group" | "both";
   search?: string;
-  sortBy?: "relevance" | "rating" | "newest" | "price_asc" | "price_desc";
+  sortBy?: "relevance" | "rating" | "newest";
   page?: number;
   pageSize?: number;
 }
