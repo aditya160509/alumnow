@@ -3,8 +3,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  LayoutDashboard, Search, CalendarDays, Star,
-  Users
+  LayoutDashboard,
+  Search,
+  CalendarDays,
+  Star,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -21,16 +24,20 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
-    if (href.includes("?")) return pathname === href.split("?")[0] && pathname !== "/dashboard";
+    if (href.includes("?"))
+      return pathname === href.split("?")[0] && pathname !== "/dashboard";
     return pathname.startsWith(href) && href !== "/dashboard";
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-full w-[240px] bg-black flex flex-col">
+    <aside className="fixed left-0 top-0 z-40 h-full w-[240px] bg-white flex flex-col border-r border-border">
       {/* Logo */}
-      <div className="h-[72px] flex items-center px-5 border-b border-white/[0.04] shrink-0">
-        <Link href="/" className="text-[17px] font-bold tracking-[-0.03em] text-white">
-          Alum<span style={{ color: "#5B4FE9" }}>Now</span>
+      <div className="h-[72px] flex items-center px-5 border-b border-border shrink-0">
+        <Link
+          href="/"
+          className="text-[17px] font-bold tracking-[-0.03em] text-navy"
+        >
+          Alum<span className="text-gold">Now</span>
         </Link>
       </div>
 
@@ -45,11 +52,14 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-[13px] font-medium transition-all duration-150 ${
                 active
-                  ? "bg-white/[0.10] text-white"
-                  : "text-white/45 hover:text-white/80 hover:bg-white/[0.04]"
+                  ? "bg-navy/10 text-navy"
+                  : "text-navy/45 hover:text-navy/80 hover:bg-navy/5"
               }`}
             >
-              <Icon size={16} className={active ? "text-white" : "text-white/35"} />
+              <Icon
+                size={16}
+                className={active ? "text-navy" : "text-navy/35"}
+              />
               {item.label}
             </Link>
           );
@@ -57,18 +67,24 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="px-3 pb-4 space-y-1 border-t border-white/[0.04] pt-3 shrink-0">
-        {/* User */}
+      <div className="px-3 pb-4 space-y-1 border-t border-border pt-3 shrink-0">
         {session?.user && (
           <div className="flex items-center gap-3 px-3 py-2.5">
             <img
-              src={session.user.image ?? `https://picsum.photos/seed/${session.user.id}/80/80`}
+              src={
+                session.user.image ??
+                `https://picsum.photos/seed/${session.user.id}/80/80`
+              }
               alt={session.user.name ?? ""}
               className="h-7 w-7 rounded-[6px] object-cover shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-white/80 truncate">{session.user.name}</p>
-              <p className="text-[10px] text-white/35 truncate">{session.user.email}</p>
+              <p className="text-[12px] font-semibold text-navy/80 truncate">
+                {session.user.name}
+              </p>
+              <p className="text-[10px] text-navy/35 truncate">
+                {session.user.email}
+              </p>
             </div>
           </div>
         )}

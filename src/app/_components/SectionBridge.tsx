@@ -46,39 +46,36 @@ export function SectionBridge() {
     <section
       id="how-it-works"
       aria-label="From search to conversation"
-      className="relative overflow-hidden bg-black"
+      className="relative overflow-hidden bg-cream"
     >
-      {/* Ambient radial glows */}
-      <div className="absolute inset-x-0 top-0 h-px bg-white/5" />
-      <div className="absolute inset-x-0 top-16 h-[36rem] bg-[radial-gradient(circle_at_50%_0%,rgba(91,79,233,0.08),transparent_45%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-60 bg-[radial-gradient(circle_at_50%_100%,rgba(91,79,233,0.12),transparent_55%)]" />
-
       <div className="relative mx-auto max-w-[1500px] px-6 py-16 sm:px-10 sm:py-24 lg:px-16 lg:py-32">
-
         {/* Eyebrow + Heading */}
         <div className="max-w-3xl">
           <p
-            className={`text-[11px] font-semibold uppercase tracking-[0.34em] text-white/40 transition-all duration-500 ${
+            className={`text-[11px] font-semibold uppercase tracking-[0.34em] text-navy/40 transition-all duration-500 ${
               show ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             }`}
           >
             From finding to talking
           </p>
           <h2
-            className={`mt-5 text-4xl leading-[0.95] tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl font-semibold transition-all duration-500 delay-75 ${
+            className={`mt-5 text-4xl leading-[0.95] tracking-[-0.04em] text-navy sm:text-5xl lg:text-6xl font-semibold transition-all duration-500 delay-75 ${
               show ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             }`}
           >
             The search should not end at a page.
-            <span className="text-accent"> It should open a conversation.</span>
+            <span className="text-gold">
+              {" "}
+              It should open a conversation.
+            </span>
           </h2>
           <p
-            className={`mt-5 max-w-2xl text-base leading-7 text-white/50 sm:text-lg transition-all duration-500 delay-100 ${
+            className={`mt-5 max-w-2xl text-base leading-7 text-navy/50 sm:text-lg transition-all duration-500 delay-100 ${
               show ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             }`}
           >
-            Every JBCN graduate carries answers students are still searching for.
-            AlumNow closes that gap with a single, honest call.
+            Every JBCN graduate carries answers students are still searching
+            for. AlumNow closes that gap with a single, honest call.
           </p>
         </div>
 
@@ -87,23 +84,21 @@ export function SectionBridge() {
           {steps.map(({ icon: Icon, label, title, body }, index) => (
             <article
               key={title}
-              className={`liquid-glass-strong rounded-2xl p-7 transition-all duration-500 hover:-translate-y-1 ${
+              className={`rounded-2xl border border-border bg-white p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 ${
                 show ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
               }`}
               style={{ transitionDelay: `${140 + index * 90}ms` }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs text-white/30">{label}</span>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-accent">
+                <span className="font-mono text-xs text-navy/30">{label}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cream text-gold">
                   <Icon size={18} />
                 </div>
               </div>
-              <h3 className="mt-11 text-xl font-semibold tracking-[-0.03em] text-white">
+              <h3 className="mt-11 text-xl font-semibold tracking-[-0.03em] text-navy">
                 {title}
               </h3>
-              <p className="mt-3 text-sm leading-6 text-white/50">
-                {body}
-              </p>
+              <p className="mt-3 text-sm leading-6 text-navy/50">{body}</p>
             </article>
           ))}
         </div>
@@ -116,11 +111,11 @@ export function SectionBridge() {
         >
           <Link
             href="/browse"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white hover:bg-navy-light transition-colors"
           >
             Find your mentor
           </Link>
-          <span className="text-sm text-white/30">
+          <span className="text-sm text-navy/30">
             No account needed · Book in under 2 minutes
           </span>
         </div>

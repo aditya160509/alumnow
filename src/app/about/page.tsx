@@ -1,12 +1,94 @@
 import Link from "next/link";
-import { ArrowRight, Compass, HeartHandshake, MessageCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Compass,
+  HeartHandshake,
+  MessageCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const principles = [
-  { icon: Compass, title: "Context over comparison", body: "Rankings can start a search. Lived experience helps a student understand what a university, course, and day-to-day life actually feel like." },
-  { icon: MessageCircle, title: "Questions before answers", body: "A good session is specific. Students bring the uncertainty; alumni bring the context that helps turn it into a decision." },
-  { icon: HeartHandshake, title: "Trust at every step", body: "Every mentor belongs to the JBCN community and is reviewed before appearing in the network, so students and families can choose with confidence." },
+  {
+    icon: Compass,
+    title: "Context over comparison",
+    body: "Rankings can start a search. Lived experience helps a student understand what a university, course, and day-to-day life actually feel like.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Questions before answers",
+    body: "A good session is specific. Students bring the uncertainty; alumni bring the context that helps turn it into a decision.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Trust at every step",
+    body: "Every mentor belongs to the JBCN community and is reviewed before appearing in the network, so students and families can choose with confidence.",
+  },
 ];
 
-export default function AboutPage() { return <main className="bg-background"><section className="relative isolate min-h-[calc(100dvh-64px)] overflow-hidden bg-primary-dark px-6 py-24 text-white sm:px-10 lg:px-16"><video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover opacity-90" aria-hidden="true"><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260613_180732_a54afbf6-b30d-470e-861f-669871f09f67.mp4" type="video/mp4" /></video><div className="absolute inset-0 bg-primary-dark/20" /><div className="absolute inset-0 bg-gradient-to-r from-primary-dark/40 via-primary-dark/10 to-transparent" /><div className="relative mx-auto flex min-h-[calc(100dvh-12rem)] max-w-[1400px] items-end"><div className="max-w-4xl pb-8"><p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[.2em] text-white/75"><span className="h-px w-10 bg-accent" />About AlumNow</p><h1 className="mt-6 max-w-5xl font-serif text-[clamp(4rem,8vw,8rem)] leading-[.86] tracking-[-.05em]">The advice that lives <em className="not-italic text-accent">between</em> the lines.</h1><p className="mt-8 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">Choosing a university or course is too important to be reduced to a ranking table. AlumNow gives JBCN students a direct line to alumni who can share what a prospectus cannot.</p><div className="mt-9"><Link href="/browse"><Button variant="accent" size="lg" className="rounded-full">Meet the network <ArrowRight size={17} /></Button></Link></div></div></div></section><section className="relative isolate overflow-hidden bg-primary-dark px-6 py-24 text-white sm:px-10 lg:px-16"><div className="relative mx-auto max-w-[1400px]"><div className="grid gap-12 lg:grid-cols-[.75fr_1.25fr]"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-accent">Why we built it</p><h2 className="mt-4 max-w-md font-serif text-5xl leading-[.94] text-white">A person can explain what a brochure leaves out.</h2></div><div className="max-w-2xl space-y-6 text-base leading-8 text-white/65"><p>We built AlumNow because the most useful advice we received was rarely in a brochure. It came from someone who had made the choice before us and was generous enough to explain what they wished they had known.</p><p>Our aim is simple: make that kind of conversation easier to find, easier to book, and more useful for the student on the other side of the screen.</p></div></div><div className="mt-20 grid gap-4 md:grid-cols-3">{principles.map(({ icon: Icon, title, body }, index) => <Card key={title} interactive className="liquid-glass border-white/15 p-6"><div className="flex items-center justify-between"><span className="font-mono text-xs text-accent">0{index + 1}</span><Icon size={22} className="text-primary" /></div><h3 className="mt-14 text-xl text-white">{title}</h3><p className="mt-3 text-sm leading-7 text-white/60">{body}</p></Card>)}</div></div></section><section className="border-y border-border bg-white px-6 py-20 sm:px-10 lg:px-16"><div className="mx-auto flex max-w-[1400px] flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-accent">A better next step</p><h2 className="mt-4 max-w-2xl font-serif text-5xl leading-[.94] text-primary">Bring the question you cannot answer alone.</h2></div><Link href="/browse"><Button variant="primary" size="lg" className="rounded-full">Browse alumni <ArrowRight size={17} /></Button></Link></div></section></main>; }
+export default function AboutPage() {
+  return (
+    <main className="bg-cream">
+      {/* Hero */}
+      <section className="relative isolate min-h-[calc(100dvh-64px)] overflow-hidden bg-navy-dark px-6 py-24 text-white sm:px-10 lg:px-16">
+        <div className="relative mx-auto flex min-h-[calc(100dvh-12rem)] max-w-[1400px] items-end">
+          <div className="max-w-4xl pb-8">
+            <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[.2em] text-white/75">
+              <span className="h-px w-10 bg-gold" />
+              About AlumNow
+            </p>
+            <h1 className="mt-6 max-w-5xl text-[clamp(4rem,8vw,8rem)] leading-[.86] tracking-[-.05em] font-semibold">
+              The advice that lives{" "}
+              <em className="not-italic text-gold">between</em> the lines.
+            </h1>
+            <p className="mt-8 max-w-2xl text-base leading-7 text-white/75 sm:text-lg">
+              Choosing a university or course is too important to be reduced to
+              a ranking table. AlumNow gives JBCN students a direct line to
+              alumni who can share what a prospectus cannot.
+            </p>
+            <div className="mt-9">
+              <Link href="/browse">
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className="rounded-full"
+                >
+                  Meet the network <ArrowRight size={17} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Principles */}
+      <section className="relative isolate overflow-hidden bg-cream px-6 py-24 sm:px-10 lg:px-16">
+        <div className="relative mx-auto max-w-[1400px]">
+          <div className="grid gap-12 lg:grid-cols-[.75fr_1.25fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[.2em] text-gold">
+                Why we built it
+              </p>
+              <h2 className="mt-4 max-w-md text-5xl leading-[.94] text-navy font-semibold">
+                A person can explain what a page cannot.
+              </h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {principles.map(({ icon: Icon, title, body }) => (
+                <Card key={title} className="p-5">
+                  <Icon size={20} className="text-gold" />
+                  <h3 className="mt-4 text-lg font-semibold text-navy">
+                    {title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-navy/60">
+                    {body}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

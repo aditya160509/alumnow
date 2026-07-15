@@ -20,7 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <h2 className="text-lg font-semibold text-[#0F0F10]">Something went wrong</h2>
             <p className="mt-2 text-sm text-[#6E6E76]">An unexpected error occurred. Please refresh the page.</p>
             <button onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
-              className="mt-5 px-5 py-2.5 bg-[#5B4FE9] text-white text-sm font-semibold rounded-[10px] hover:bg-[#4A3FD6] transition-colors"
+              className="mt-5 px-5 py-2.5 bg-gold text-white text-sm font-semibold rounded-[10px] hover:bg-gold-light transition-colors"
             >Refresh page</button>
           </div>
         </div>

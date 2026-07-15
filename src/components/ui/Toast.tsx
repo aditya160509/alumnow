@@ -4,11 +4,16 @@ import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
 
-export function ToastProvider({ ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Provider>) {
+export function ToastProvider({
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Provider>) {
   return <ToastPrimitive.Provider {...props} />;
 }
 
-export function ToastViewport({ className, ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Viewport>) {
+export function ToastViewport({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Viewport>) {
   return (
     <ToastPrimitive.Viewport
       className={cn(
@@ -20,11 +25,14 @@ export function ToastViewport({ className, ...props }: ComponentPropsWithoutRef<
   );
 }
 
-export function Toast({ className, ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Root>) {
+export function Toast({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Root>) {
   return (
     <ToastPrimitive.Root
       className={cn(
-        "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[10px] border border-white/10 bg-[#0A0A0B] p-4 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full",
+        "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[10px] border border-border bg-white p-4 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full",
         className
       )}
       {...props}
@@ -32,19 +40,38 @@ export function Toast({ className, ...props }: ComponentPropsWithoutRef<typeof T
   );
 }
 
-export function ToastTitle({ className, ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Title>) {
-  return <ToastPrimitive.Title className={cn("text-sm font-semibold text-white", className)} {...props} />;
+export function ToastTitle({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Title>) {
+  return (
+    <ToastPrimitive.Title
+      className={cn("text-sm font-semibold text-navy", className)}
+      {...props}
+    />
+  );
 }
 
-export function ToastDescription({ className, ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Description>) {
-  return <ToastPrimitive.Description className={cn("text-sm text-white/50", className)} {...props} />;
+export function ToastDescription({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Description>) {
+  return (
+    <ToastPrimitive.Description
+      className={cn("text-sm text-navy/50", className)}
+      {...props}
+    />
+  );
 }
 
-export function ToastClose({ className, ...props }: ComponentPropsWithoutRef<typeof ToastPrimitive.Close>) {
+export function ToastClose({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<typeof ToastPrimitive.Close>) {
   return (
     <ToastPrimitive.Close
       className={cn(
-        "absolute top-2 right-2 rounded-md p-1 text-white/40 opacity-0 transition-opacity hover:text-white focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
+        "absolute top-2 right-2 rounded-md p-1 text-navy/40 opacity-0 transition-opacity hover:text-navy focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
         className
       )}
       toast-close=""
