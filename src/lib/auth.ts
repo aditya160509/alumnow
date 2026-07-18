@@ -15,24 +15,25 @@ const DEMO_PASSWORD = "password123";
 const DEMO_ACCOUNTS = new Set(["student1@alumnow.com", "alumni1@alumnow.com", "admin@alumnow.com"]);
 
 async function ensureDemoAccount(email: string, password: string) {
-  if (!DEMO_ACCOUNTS.has(email) || password !== DEMO_PASSWORD) return;
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!DEMO_ACCOUNTS.has(normalizedEmail) || password !== DEMO_PASSWORD) return;
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing?.passwordHash) return;
   const passwordHash = await hash(DEMO_PASSWORD, 12);
-  if (email === "admin@alumnow.com") {
+  if (normalizedEmail === "admin@alumnow.com") {
     await prisma.user.upsert({
-      where: { email },
+      where: { email: normalizedEmail },
       update: { passwordHash, role: "admin", emailVerifiedAt: new Date() },
-      create: { email, passwordHash, role: "admin", emailVerifiedAt: new Date(), adminUser: { create: {} } },
+      create: { email: normalizedEmail, passwordHash, role: "admin", emailVerifiedAt: new Date(), adminUser: { create: {} } },
     });
     return;
   }
-  if (email === "alumni1@alumnow.com") {
+  if (normalizedEmail === "alumni1@alumnow.com") {
     await prisma.user.upsert({
-      where: { email },
+      where: { email: normalizedEmail },
       update: { passwordHash, role: "alumnus", emailVerifiedAt: new Date() },
       create: {
-        email, passwordHash, role: "alumnus", emailVerifiedAt: new Date(),
+        email: normalizedEmail, passwordHash, role: "alumnus", emailVerifiedAt: new Date(),
         alumniProfile: {
           create: {
             fullName: "Priya Sharma", universityName: "UC Berkeley", course: "B.Sc. Computer Science",
@@ -47,10 +48,10 @@ async function ensureDemoAccount(email: string, password: string) {
     return;
   }
   await prisma.user.upsert({
-    where: { email },
+    where: { email: normalizedEmail },
     update: { passwordHash, role: "student", emailVerifiedAt: new Date() },
     create: {
-      email, passwordHash, role: "student", phone: "+919876543210", emailVerifiedAt: new Date(),
+      email: normalizedEmail, passwordHash, role: "student", phone: "+919876543210", emailVerifiedAt: new Date(),
       studentProfile: { create: { fullName: "Aarav Patel", currentGrade: "A2" } },
     },
   });
@@ -84,10 +85,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
+        const email = parsed.data.email.trim().toLowerCase();
 
-        await ensureDemoAccount(parsed.data.email, parsed.data.password);
+        await ensureDemoAccount(email, parsed.data.password);
 
-        const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: {
+            studentProfile: { select: { fullName: true } },
+            alumniProfile: { select: { fullName: true } },
+          },
+        });
         if (!user?.passwordHash) return null;
 
         const valid = await compare(parsed.data.password, user.passwordHash);
@@ -96,7 +104,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return {
           id: user.id,
           email: user.email,
-          name: user.email,
+          name: user.studentProfile?.fullName ?? user.alumniProfile?.fullName ?? user.email,
           role: user.role,
         };
       },
@@ -129,6 +137,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         } else {
           user.id = existing.id;
           (user as any).role = existing.role;
+          user.name = user.name ?? email;
           if (!existing.emailVerifiedAt) {
             await prisma.user.update({ where: { id: existing.id }, data: { emailVerifiedAt: new Date() } });
           }

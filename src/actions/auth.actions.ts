@@ -82,14 +82,15 @@ async function ensureDemoAccount(email: string, password: string) {
 }
 
 export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: string }>> {
-  try { const parsed = signupSchema.parse(input); const existing = await prisma.user.findUnique({ where: { email: parsed.email } }); if (existing) return { success: false, error: "An account with this email already exists." }; const passwordHash = await hash(parsed.password, 12); await prisma.user.create({ data: { email: parsed.email, passwordHash, phone: parsed.phone, role: "student", emailVerifiedAt: new Date(), studentProfile: { create: { fullName: parsed.fullName, dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null, currentGrade: parsed.currentGrade, school: parsed.school } } } }); return { success: true, data: { redirectTo: "/dashboard" } }; } catch (error) { if (error instanceof Error && "flatten" in error) return { success: false, error: "Please check your details." }; return { success: false, error: "Something went wrong. Please try again." }; }
+  try { const parsed = signupSchema.parse(input); const email = parsed.email.trim().toLowerCase(); const existing = await prisma.user.findUnique({ where: { email } }); if (existing) return { success: false, error: "An account with this email already exists." }; const passwordHash = await hash(parsed.password, 12); await prisma.user.create({ data: { email, passwordHash, phone: parsed.phone, role: "student", emailVerifiedAt: new Date(), studentProfile: { create: { fullName: parsed.fullName, dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null, currentGrade: parsed.currentGrade, school: parsed.school } } } }); return { success: true, data: { redirectTo: "/dashboard" } }; } catch (error) { if (error instanceof Error && "flatten" in error) return { success: false, error: "Please check your details." }; return { success: false, error: "Something went wrong. Please try again." }; }
 }
 
 export async function login(input: { email: string; password: string }): Promise<ApiResponse<{ redirectTo: string }>> {
   try {
     const parsed = loginSchema.parse(input);
-    await ensureDemoAccount(parsed.email, parsed.password);
-    const user = await prisma.user.findUnique({ where: { email: parsed.email }, select: { role: true, passwordHash: true } });
+    const email = parsed.email.trim().toLowerCase();
+    await ensureDemoAccount(email, parsed.password);
+    const user = await prisma.user.findUnique({ where: { email }, select: { role: true, passwordHash: true } });
     if (!user?.passwordHash) return { success: false, error: "Invalid email or password." };
     const valid = await compare(parsed.password, user.passwordHash);
     if (!valid) return { success: false, error: "Invalid email or password." };
@@ -112,12 +113,13 @@ export async function signupAlumni(input: {
     const parsed = signupAlumniSchema.safeParse(input);
     if (!parsed.success) return { success: false, error: "Please check your details." };
     const { data } = parsed;
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    const email = data.email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return { success: false, error: "An account with this email already exists." };
     const passwordHash = await hash(data.password, 12);
     const user = await prisma.user.create({
       data: {
-        email: data.email, passwordHash, phone: data.phone, role: "alumnus", emailVerifiedAt: new Date(),
+        email, passwordHash, phone: data.phone, role: "alumnus", emailVerifiedAt: new Date(),
         alumniProfile: {
           create: {
             fullName: data.fullName,
@@ -134,7 +136,7 @@ export async function signupAlumni(input: {
         },
       },
     });
-    await sendEmail(emailTemplates.signupVerification(data.email, data.fullName), user.id);
+    await sendEmail(emailTemplates.signupVerification(email, data.fullName), user.id);
     return { success: true, data: { redirectTo: "/alumni/dashboard" } };
   } catch {
     return { success: false, error: "Something went wrong. Please try again." };
