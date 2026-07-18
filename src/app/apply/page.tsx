@@ -58,11 +58,17 @@ export default function ApplyPage() {
       return;
     }
     setStatus("verified");
-    await signIn("credentials", {
+    const signInResult = await signIn("credentials", {
       email: data.email,
       password: data.password,
-      callbackUrl: "/browse",
+      redirect: false,
     });
+    if (signInResult?.error) {
+      setError("Profile approved but sign-in failed. Please go to login.");
+      setStatus("idle");
+      return;
+    }
+    window.location.href = "/browse";
   }
 
   if (status !== "idle") {

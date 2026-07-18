@@ -18,11 +18,17 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signIn("credentials", {
+      const result = await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/browse",
+        redirect: false,
       });
+      if (result?.error) {
+        setError("Invalid email or password");
+        setSubmitting(false);
+        return;
+      }
+      window.location.href = "/browse";
     } catch {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
