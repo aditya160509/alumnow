@@ -1,7 +1,6 @@
 "use client";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAlumni, getFilterOptions, saveAlumni, unsaveAlumni } from "@/actions/alumni.actions";
 import { getSavedAlumni } from "@/actions/student.actions";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -16,9 +15,6 @@ import { X, LayoutGrid, Heart, Sparkles, ArrowUpDown, ChevronDown } from "lucide
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-const ALUMNI_KEY = ["alumni"];
-const SAVED_KEY = ["saved-alumni"];
-const OPTIONS_KEY = ["filter-options"];
 const ITEMS_PER_PAGE = 18;
 
 const categoryTabs = [
@@ -33,8 +29,9 @@ function activeCategoryLabel(sp: URLSearchParams): string {
   for (const tab of categoryTabs) {
     if (tab.label === "All") continue;
     const match = Object.entries(tab.filters).every(([key, val]) => {
-      if (Array.isArray(val)) return val.every((v) => sp.getAll(key).includes(String(v)));
-      return sp.get(key) === String(val);
+      const paramKey = key === "qsTiers" ? "qsTier" : key;
+      if (Array.isArray(val)) return val.every((v) => sp.getAll(paramKey).includes(String(v)));
+      return sp.get(paramKey) === String(val);
     });
     if (match) return tab.label;
   }
@@ -64,7 +61,7 @@ function filtersFromSearchParams(sp: URLSearchParams): AlumniFilters {
     minRating: sp.get("minRating") ?? undefined,
     availability: (sp.get("availability") as AlumniFilters["availability"]) ?? undefined,
     sessionType: (sp.get("sessionType") as AlumniFilters["sessionType"]) ?? undefined,
-    sortBy: (sp.get("sortBy") as AlumniFilters["sortBy"]) ?? "relevance",
+    sortBy: (sp.get("sortBy") as AlumniFilters["sortBy"]) ?? undefined,
   };
 }
 
@@ -109,10 +106,15 @@ export default function BrowsePage() {
 function BrowsePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [selectedAlumni, setSelectedAlumni] = useState<AlumniCardData | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [data, setData] = useState<{ items: AlumniCardData[]; total: number; totalPages: number } | null>(null);
+  const [savedItems, setSavedItems] = useState<AlumniCardData[]>([]);
+  const [options, setOptions] = useState<{ universities: string[]; countries: string[]; courses: string[] }>({ universities: [], countries: [], courses: [] });
+  const [loading, setLoading] = useState(true);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
   const sortBy = searchParams.get("sortBy") ?? "relevance";
@@ -122,45 +124,42 @@ function BrowsePageContent() {
 
   const queryParams = useMemo(() => ({ ...filters, sortBy, page: tab === "browse" ? page : 1, pageSize: ITEMS_PER_PAGE }), [filters, sortBy, page, tab]);
 
-  const { data, isFetching, error } = useQuery({
-    queryKey: [...ALUMNI_KEY, queryParams],
-    queryFn: () => listAlumni(queryParams),
-    placeholderData: (prev) => prev,
-    staleTime: 30000,
-  });
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    listAlumni(queryParams)
+      .then((result) => { if (!cancelled) setData(result as any); })
+      .catch(() => { if (!cancelled) { setError("Failed to load alumni."); setData({ items: [], total: 0, totalPages: 1 }); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [queryParams]);
 
-  const optionsQuery = useQuery({
-    queryKey: [...OPTIONS_KEY, filters.country],
-    queryFn: () => getFilterOptions(filters.country),
-    staleTime: 300000,
-  });
+  useEffect(() => {
+    let cancelled = false;
+    getFilterOptions(filters.country)
+      .then((result) => { if (!cancelled) setOptions(result); })
+      .catch(() => { if (!cancelled) setOptions({ universities: [], countries: [], courses: [] }); });
+    return () => { cancelled = true; };
+  }, [filters.country]);
 
-  const savedQuery = useQuery({
-    queryKey: SAVED_KEY,
-    queryFn: getSavedAlumni,
-    staleTime: 120000,
-  });
+  useEffect(() => {
+    let cancelled = false;
+    setSavedLoading(true);
+    getSavedAlumni()
+      .then((result) => { if (!cancelled) setSavedItems(result.map((s) => s.alumni) as unknown as AlumniCardData[]); })
+      .catch(() => { if (!cancelled) setSavedItems([]); })
+      .finally(() => { if (!cancelled) setSavedLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Reset page when search params (filters) change
   useEffect(() => { setPage(1); }, [spStr]);
-
-  const invalidateAlumni = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ALUMNI_KEY });
-    queryClient.invalidateQueries({ queryKey: SAVED_KEY });
-  }, [queryClient]);
-
-  const saveMutation = useMutation({ mutationFn: saveAlumni, onSuccess: invalidateAlumni });
-  const unsaveMutation = useMutation({ mutationFn: unsaveAlumni, onSuccess: invalidateAlumni });
 
   const items = (data?.items ?? []) as AlumniCardData[];
   const totalPages = data?.totalPages ?? 1;
   const hasMore = page < totalPages;
   const totalItems = data?.total ?? 0;
-
-  const savedItems: AlumniCardData[] = useMemo(
-    () => (savedQuery.data ?? []).map((s) => s.alumni) as unknown as AlumniCardData[],
-    [savedQuery.data]
-  );
 
   const updateFilters = useCallback((next: Partial<AlumniFilters>) => {
     const merged = { ...filters, ...next };
@@ -196,10 +195,10 @@ function BrowsePageContent() {
   const activeCat = activeCategoryLabel(searchParams);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
+    <div className="min-h-screen bg-[#f6f6f8] text-[#15151a]">
 
       {/* Sub-nav bar */}
-      <div className="sticky top-0 z-20 bg-[#0D0D0D]/80 backdrop-blur-md border-b border-white/5 pt-16">
+      <div className="sticky top-0 z-20 border-b border-black/5 bg-white/85 pt-16 shadow-[0_1px_0_rgba(0,0,0,0.03)] backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center gap-4">
           {/* Category pills */}
           <div className="hidden md:flex items-center gap-0.5">
@@ -220,8 +219,8 @@ function BrowsePageContent() {
                 }}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
                   activeCat === tab.label
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
+                    ? "bg-[#6C5CFF] text-white shadow-[0_8px_20px_rgba(108,92,255,0.24)]"
+                    : "text-[#777783] hover:text-[#15151a] hover:bg-black/[0.04]"
                 }`}
               >
                 {tab.label}
@@ -236,7 +235,7 @@ function BrowsePageContent() {
           <SearchTrigger onClick={() => setSearchOpen(true)} />
 
           {/* Browse / Saved toggle */}
-          <div className="flex items-center bg-white/5 rounded-lg p-0.5">
+          <div className="flex items-center rounded-xl bg-black/[0.04] p-0.5">
             <button
               onClick={() => {
                 const p = new URLSearchParams(filtersToParams(filters));
@@ -244,7 +243,7 @@ function BrowsePageContent() {
                 router.replace(`/browse?${p.toString()}`, { scroll: false });
               }}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${
-                  tab === "browse" ? "bg-[#232326] text-white shadow-sm" : "text-white/30 hover:text-white"
+                  tab === "browse" ? "bg-white text-[#15151a] shadow-sm" : "text-[#888894] hover:text-[#15151a]"
               }`}
             >
               Browse
@@ -256,12 +255,12 @@ function BrowsePageContent() {
                 router.replace(`/browse?${p.toString()}`, { scroll: false });
               }}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all inline-flex items-center gap-1 ${
-                  tab === "saved" ? "bg-[#232326] text-white shadow-sm" : "text-white/30 hover:text-white"
+                  tab === "saved" ? "bg-white text-[#15151a] shadow-sm" : "text-[#888894] hover:text-[#15151a]"
               }`}
             >
               <Heart size={11} />
               Saved
-              {savedQuery.data?.length ? <span className="text-[10px] opacity-60">({savedQuery.data.length})</span> : null}
+              {savedItems.length ? <span className="text-[10px] opacity-60">({savedItems.length})</span> : null}
             </button>
           </div>
 
@@ -274,7 +273,7 @@ function BrowsePageContent() {
               router.replace(`/browse?${p.toString()}`, { scroll: false });
             }}
             className={`p-2 rounded-lg transition-all ${
-              swipe ? "bg-coral text-white" : "text-white/30 hover:text-white hover:bg-white/5"
+              swipe ? "bg-[#6C5CFF] text-white" : "text-[#888894] hover:text-[#15151a] hover:bg-black/[0.04]"
             }`}
             title={swipe ? "Grid view" : "Swipe view"}
           >
@@ -288,12 +287,12 @@ function BrowsePageContent() {
         {/* Header row */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-[28px] font-bold text-white">Marketplace</h1>
-            <p className="text-sm text-white/50 mt-0.5">
+            <h1 className="text-[30px] font-semibold tracking-[-0.03em] text-[#15151a]">Marketplace</h1>
+            <p className="text-sm text-[#777783] mt-0.5">
               {totalItems > 0 ? `${totalItems} alumni available` : "Browse verified alumni mentors"}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-white/30">
+          <div className="flex items-center gap-1.5 text-xs text-[#777783]">
             <ArrowUpDown size={13} />
             <span>Sort:</span>
             <div className="relative">
@@ -305,13 +304,13 @@ function BrowsePageContent() {
                   else p.set("sortBy", e.target.value);
                   router.replace(`/browse${p.toString() ? `?${p.toString()}` : ""}`, { scroll: false });
                 }}
-                className="appearance-none bg-transparent text-xs font-semibold text-white outline-none cursor-pointer pr-4"
+                className="appearance-none bg-transparent text-xs font-semibold text-[#15151a] outline-none cursor-pointer pr-4"
               >
                 {sortOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-white/30" />
+              <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-[#777783]" />
             </div>
           </div>
         </div>
@@ -320,14 +319,14 @@ function BrowsePageContent() {
         <AnimatePresence>
           {activeFilters.length >= 1 && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 flex flex-wrap items-center gap-2">
-              <Sparkles size={12} className="text-white/30" />
+              <Sparkles size={12} className="text-[#9A8CFF]" />
               {activeFilters.map(([key, val]) => (
-                <span key={key} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[11px] font-medium text-white shadow-sm">
+                <span key={key} className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1 text-[11px] font-medium text-[#15151a] shadow-sm">
                   {activeFilterLabels[key]?.(val) ?? key}
-                  <button onClick={() => removeFilter(key)} className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text)] transition-colors"><X size={11} /></button>
+                  <button onClick={() => removeFilter(key)} className="text-[#888894] hover:text-[#15151a] transition-colors"><X size={11} /></button>
                 </span>
               ))}
-              <button onClick={clearFilters} className="text-xs text-[var(--color-primary)] hover:underline font-medium ml-1 transition-colors">Clear all</button>
+              <button onClick={clearFilters} className="text-xs text-[#6C5CFF] hover:underline font-medium ml-1 transition-colors">Clear all</button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -340,9 +339,9 @@ function BrowsePageContent() {
               <FilterPanel
                 filters={filters}
                 options={{
-                  universities: optionsQuery.data?.universities ?? [],
-                  countries: optionsQuery.data?.countries ?? [],
-                  courses: optionsQuery.data?.courses ?? [],
+                  universities: options.universities,
+                  countries: options.countries,
+                  courses: options.courses,
                 }}
                 onChange={updateFilters}
                 onClear={clearFilters}
@@ -356,12 +355,12 @@ function BrowsePageContent() {
             {error && (
               <div className="rounded-2xl border border-dashed border-red-300 bg-red-50 px-6 py-12 text-center" role="alert">
                 <h2 className="text-lg font-semibold text-red-700">Something went wrong</h2>
-                <p className="mt-2 text-sm text-red-500">Failed to load alumni. Please try again.</p>
-                <Button className="mt-4" variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ALUMNI_KEY })}>Retry</Button>
+                <p className="mt-2 text-sm text-red-500">{error}</p>
+                <Button className="mt-4" variant="outline" onClick={() => setPage((p) => p)}>Retry</Button>
               </div>
             )}
 
-            {!error && tab === "saved" && savedQuery.isLoading && (
+            {!error && tab === "saved" && savedLoading && (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={`sv-sk-${i}`} className="rounded-lg border border-white/5 bg-[#1A1A1A] overflow-hidden">
@@ -379,11 +378,11 @@ function BrowsePageContent() {
             {!error && swipe && tab === "browse" ? (
               <SwipeDeck
                 items={items}
-                onSave={async (id) => { await saveMutation.mutateAsync(id); return { success: true }; }}
-                onUndoSave={(id) => unsaveMutation.mutateAsync(id)}
+                onSave={async (id) => { await saveAlumni(id); return { success: true }; }}
+                onUndoSave={(id) => unsaveAlumni(id)}
               />
             ) : !error && tab === "saved" ? (
-              savedItems.length === 0 && !savedQuery.isLoading ? (
+              savedItems.length === 0 && !savedLoading ? (
                 <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-6 py-20 text-center">
                   <Heart size={36} className="mx-auto text-[var(--color-text-tertiary)]" />
                   <h2 className="mt-4 text-lg font-semibold text-white">No saved alumni yet</h2>
@@ -394,7 +393,7 @@ function BrowsePageContent() {
                 <AlumniGrid items={savedItems} hasMore={false} loadMore={() => {}} loading={false} onSelect={handleSelect} />
               )
             ) : !error && tab === "browse" ? (
-              <AlumniGrid items={items} hasMore={hasMore} loadMore={loadMore} loading={isFetching} onSelect={handleSelect} />
+              <AlumniGrid items={items} hasMore={hasMore} loadMore={loadMore} loading={loading} onSelect={handleSelect} />
             ) : null}
           </div>
         </div>

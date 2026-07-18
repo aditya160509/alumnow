@@ -33,7 +33,7 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
 
   if (variant === "swipe") {
     return (
-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl bg-[#1A1A1A] border border-white/5">
+      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-xl bg-white border border-black/8">
         <div className="relative flex-shrink-0" style={{ aspectRatio: "4 / 3" }}>
           {!imgLoaded && !imgError && (
             <div className="absolute inset-0 animate-shimmer" />
@@ -49,21 +49,21 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
         </div>
         <div className="flex flex-1 flex-col justify-between p-5">
           <div>
-            <h3 className="text-lg font-bold text-white">{alumni.fullName}</h3>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-white/50">
+            <h3 className="text-lg font-bold text-[#15151a]">{alumni.fullName}</h3>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-[#777783]">
               <GraduationCap size={14} className="shrink-0" />
               {alumni.universityName}
             </p>
-            <p className="mt-1 text-xs text-white/30">{alumni.country} · {alumni.course}</p>
-            <p className="mt-2 line-clamp-2 text-sm leading-5 text-white/40">{alumni.bio ?? "Ready to share practical advice."}</p>
+            <p className="mt-1 text-xs text-[#9a9aa4]">{alumni.country} · {alumni.course}</p>
+            <p className="mt-2 line-clamp-2 text-sm leading-5 text-[#888894]">{alumni.bio ?? "Ready to share practical advice."}</p>
           </div>
-          <div className="flex items-center gap-2 pt-3 border-t border-white/5 mt-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/50">
+          <div className="flex items-center gap-2 pt-3 border-t border-black/8 mt-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-[#777783]">
               <Clock3 size={11} />
               {responseTime != null ? `${Math.round(responseTime)}h` : "—"}
             </span>
             {alumni.ratingAvg != null && (
-              <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-white">
+              <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-[#15151a]">
                 <Star size={12} className="fill-amber-400 text-amber-400" />
                 {alumni.ratingAvg.toFixed(1)}
               </span>
@@ -77,7 +77,7 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
   return (
     <div onClick={() => onSelect?.(alumni.id)} className="group cursor-pointer">
       <div
-        className="bg-[#1A1A1A] rounded-[var(--radius-lg)] border border-white/5 overflow-hidden card-elevation"
+        className="bg-white rounded-[var(--radius-lg)] border border-black/8 overflow-hidden card-elevation"
         style={{ animationDelay: `${index * 50}ms` }}
       >
         {/* Image zone — fixed 4:3 aspect ratio */}
@@ -137,9 +137,9 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
         <div className="p-5">
           {/* Name + rating row */}
           <div className="flex items-start justify-between gap-3 mb-1">
-            <h3 className="text-[16px] font-semibold text-white leading-snug group-hover:text-coral transition-colors line-clamp-1">{alumni.fullName}</h3>
+            <h3 className="text-[16px] font-semibold text-[#15151a] leading-snug group-hover:text-coral transition-colors line-clamp-1">{alumni.fullName}</h3>
             {alumni.ratingAvg != null && (
-              <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-white">
+              <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#15151a]">
                 <Star size={13} className="fill-amber-400 text-amber-400" />
                 {alumni.ratingAvg.toFixed(1)}
               </span>
@@ -147,20 +147,20 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
           </div>
 
           {/* University */}
-          <p className="flex items-center gap-1.5 text-[13px] text-white/50 mb-1">
-            <GraduationCap size={13} className="shrink-0 text-white/25" />
+          <p className="flex items-center gap-1.5 text-[13px] text-[#777783] mb-1">
+            <GraduationCap size={13} className="shrink-0 text-[#a1a1aa]" />
             <span className="truncate">{alumni.universityName}</span>
           </p>
 
           {/* Location + year */}
-          <p className="flex items-center gap-1 text-xs text-white/30 mb-3">
+          <p className="flex items-center gap-1 text-xs text-[#9a9aa4] mb-3">
             <MapPin size={11} className="shrink-0" />
             {alumni.country} · {alumni.course} · {alumni.graduationYearJbcn}
           </p>
 
           {/* Response time badge */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/50">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-[#777783]">
               <Clock3 size={11} />
               {responseTime != null
                 ? `Responds within ${responseTime < 1 ? "1h" : `${Math.round(responseTime)}h`}`
@@ -174,26 +174,26 @@ export function AlumniCard({ alumni, variant = "grid", onSaved, index = 0, onSel
           </div>
 
           {/* Bio — 2 line max */}
-          <p className="line-clamp-2 text-[13px] leading-5 text-white/40 mb-4">
+          <p className="line-clamp-2 text-[13px] leading-5 text-[#888894] mb-4">
             {alumni.bio ?? "Ready to share practical advice from their university journey."}
           </p>
 
           {/* Footer row */}
-          <div className="flex items-center justify-between pt-3 border-t border-white/5">
+          <div className="flex items-center justify-between pt-3 border-t border-black/8">
             <div className="flex items-center gap-2">
               {hasSessions && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/50">
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2.5 py-1 text-[11px] font-medium text-[#777783]">
                   <Video size={11} />
                   {alumni.sessionTypes.length} option{alumni.sessionTypes.length > 1 ? "s" : ""}
                 </span>
               )}
               {lowestPrice != null && (
-                <span className="text-sm font-bold text-white">
+                <span className="text-sm font-bold text-[#15151a]">
                   ₹{Math.round(lowestPrice / 100)}
                 </span>
               )}
             </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-coral transition-all group-hover:bg-coral-light">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#6C5CFF] transition-all group-hover:bg-[#5B4CF0]">
               View Profile <ArrowRight size={12} />
             </span>
           </div>
