@@ -195,10 +195,10 @@ function BrowsePageContent() {
   const activeCat = activeCategoryLabel(searchParams);
 
   return (
-    <div className="min-h-screen bg-[#f6f6f8] text-[#15151a]">
+    <div className="min-h-screen bg-[#0D0D0D] text-white">
 
       {/* Sub-nav bar */}
-      <div className="sticky top-0 z-20 border-b border-black/5 bg-white/85 pt-16 shadow-[0_1px_0_rgba(0,0,0,0.03)] backdrop-blur-xl">
+      <div className="sticky top-0 z-20 border-b border-white/6 bg-[#0D0D0D]/88 pt-16 shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center gap-4">
           {/* Category pills */}
           <div className="hidden md:flex items-center gap-0.5">
@@ -219,8 +219,8 @@ function BrowsePageContent() {
                 }}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
                   activeCat === tab.label
-                    ? "bg-[#6C5CFF] text-white shadow-[0_8px_20px_rgba(108,92,255,0.24)]"
-                    : "text-[#777783] hover:text-[#15151a] hover:bg-black/[0.04]"
+                    ? "bg-[#E8573A] text-white shadow-[0_8px_24px_rgba(232,87,58,0.24)]"
+                    : "text-white/42 hover:text-white hover:bg-white/[0.06]"
                 }`}
               >
                 {tab.label}
@@ -235,7 +235,7 @@ function BrowsePageContent() {
           <SearchTrigger onClick={() => setSearchOpen(true)} />
 
           {/* Browse / Saved toggle */}
-          <div className="flex items-center rounded-xl bg-black/[0.04] p-0.5">
+          <div className="flex items-center rounded-xl bg-white/[0.06] p-0.5">
             <button
               onClick={() => {
                 const p = new URLSearchParams(filtersToParams(filters));
@@ -243,7 +243,7 @@ function BrowsePageContent() {
                 router.replace(`/browse?${p.toString()}`, { scroll: false });
               }}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${
-                  tab === "browse" ? "bg-white text-[#15151a] shadow-sm" : "text-[#888894] hover:text-[#15151a]"
+                  tab === "browse" ? "bg-[#232326] text-white shadow-sm" : "text-white/35 hover:text-white"
               }`}
             >
               Browse
@@ -255,7 +255,7 @@ function BrowsePageContent() {
                 router.replace(`/browse?${p.toString()}`, { scroll: false });
               }}
               className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all inline-flex items-center gap-1 ${
-                  tab === "saved" ? "bg-white text-[#15151a] shadow-sm" : "text-[#888894] hover:text-[#15151a]"
+                  tab === "saved" ? "bg-[#232326] text-white shadow-sm" : "text-white/35 hover:text-white"
               }`}
             >
               <Heart size={11} />
@@ -273,7 +273,7 @@ function BrowsePageContent() {
               router.replace(`/browse?${p.toString()}`, { scroll: false });
             }}
             className={`p-2 rounded-lg transition-all ${
-              swipe ? "bg-[#6C5CFF] text-white" : "text-[#888894] hover:text-[#15151a] hover:bg-black/[0.04]"
+              swipe ? "bg-[#E8573A] text-white" : "text-white/35 hover:text-white hover:bg-white/[0.06]"
             }`}
             title={swipe ? "Grid view" : "Swipe view"}
           >
@@ -287,12 +287,12 @@ function BrowsePageContent() {
         {/* Header row */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-[30px] font-semibold tracking-[-0.03em] text-[#15151a]">Marketplace</h1>
-            <p className="text-sm text-[#777783] mt-0.5">
+            <h1 className="text-[30px] font-semibold tracking-[-0.03em] text-white">Marketplace</h1>
+            <p className="text-sm text-white/45 mt-0.5">
               {totalItems > 0 ? `${totalItems} alumni available` : "Browse verified alumni mentors"}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-[#777783]">
+          <div className="flex items-center gap-1.5 text-xs text-white/35">
             <ArrowUpDown size={13} />
             <span>Sort:</span>
             <div className="relative">
@@ -304,13 +304,13 @@ function BrowsePageContent() {
                   else p.set("sortBy", e.target.value);
                   router.replace(`/browse${p.toString() ? `?${p.toString()}` : ""}`, { scroll: false });
                 }}
-                className="appearance-none bg-transparent text-xs font-semibold text-[#15151a] outline-none cursor-pointer pr-4"
+                className="appearance-none bg-transparent text-xs font-semibold text-white outline-none cursor-pointer pr-4"
               >
                 {sortOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-[#777783]" />
+              <ChevronDown size={11} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-white/35" />
             </div>
           </div>
         </div>
@@ -319,14 +319,14 @@ function BrowsePageContent() {
         <AnimatePresence>
           {activeFilters.length >= 1 && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 flex flex-wrap items-center gap-2">
-              <Sparkles size={12} className="text-[#9A8CFF]" />
+              <Sparkles size={12} className="text-[#E8573A]" />
               {activeFilters.map(([key, val]) => (
-                <span key={key} className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-3 py-1 text-[11px] font-medium text-[#15151a] shadow-sm">
+                <span key={key} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-medium text-white shadow-sm">
                   {activeFilterLabels[key]?.(val) ?? key}
-                  <button onClick={() => removeFilter(key)} className="text-[#888894] hover:text-[#15151a] transition-colors"><X size={11} /></button>
+                  <button onClick={() => removeFilter(key)} className="text-white/35 hover:text-white transition-colors"><X size={11} /></button>
                 </span>
               ))}
-              <button onClick={clearFilters} className="text-xs text-[#6C5CFF] hover:underline font-medium ml-1 transition-colors">Clear all</button>
+              <button onClick={clearFilters} className="text-xs text-[#E8573A] hover:underline font-medium ml-1 transition-colors">Clear all</button>
             </motion.div>
           )}
         </AnimatePresence>
