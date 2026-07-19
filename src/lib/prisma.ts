@@ -2,14 +2,32 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../../generated/prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 const configuredDatabaseUrl = process.env.DATABASE_URL;
-const databaseUrl = process.env.VERCEL && (!configuredDatabaseUrl || configuredDatabaseUrl.startsWith("file:"))
-  ? "file:/tmp/alumnow.db"
-  : configuredDatabaseUrl ?? "file:./prisma/dev.db";
+
+function isTursoUrl(url: string): boolean {
+  return url.startsWith("libsql://");
+}
+
+function createPrismaClient() {
+  const rawUrl = configuredDatabaseUrl ?? (process.env.VERCEL ? "file:/tmp/alumnow.db" : "file:./prisma/dev.db");
+
+  if (isTursoUrl(rawUrl)) {
+    const adapter = new PrismaLibSql({ url: rawUrl });
+    return new PrismaClient({ adapter });
+  }
+
+  return createLocalSqliteClient(rawUrl);
+}
+
+function createLocalSqliteClient(url: string) {
+  bootstrapSqliteSchema(url);
+  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
+}
 
 function sqlitePathFromUrl(url: string) {
   if (!url.startsWith("file:")) return null;
@@ -198,11 +216,6 @@ function seedDemoAlumni(db: Database.Database) {
       insertAvailability.run(`demo_availability_${i + 1}_${slotIndex}`, demoAlumniId, day, start, end);
     });
   }
-}
-
-function createPrismaClient() {
-  bootstrapSqliteSchema(databaseUrl);
-  return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: databaseUrl }) });
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
