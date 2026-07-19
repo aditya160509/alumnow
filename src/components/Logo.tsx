@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({ className = "", inverse = false }: { className?: string; inverse?: boolean }) {
+  const alumColor = inverse ? "text-[#0d0d0d]" : "text-white";
   return (
     <Link href="/" className={`inline-flex items-baseline ${className}`}>
-      <span className="font-logo font-black text-white tracking-tight">
+      <span className={`font-logo font-black tracking-tight ${alumColor}`}>
         alum
       </span>
       <span className="font-logo font-black text-coral tracking-tight">
