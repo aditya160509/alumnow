@@ -24,7 +24,11 @@ export async function applyAsAlumni(input: unknown): Promise<ApiResponse<{ redir
     await tx.alumniProfile.create({ data: { userId: account.id, fullName: parsed.data.fullName, profilePhotoUrl: `https://picsum.photos/seed/${encodeURIComponent(parsed.data.fullName)}/400/400`, universityName: parsed.data.universityName, course: parsed.data.course, country: parsed.data.country, graduationYearJbcn: parsed.data.graduationYearJbcn, bio: parsed.data.bio, languages, verificationStatus: "pending", isVerifiedJbcnAlumnus: false, avgResponseTimeHours: 6, sessionTypes: { create: [{ type: "call_30", pricePaise: 29900, descriptionOneLiner: "A focused 30-minute conversation" }, { type: "call_45", pricePaise: 39900, descriptionOneLiner: "A balanced 45-minute conversation" }, { type: "call_60", pricePaise: 49900, descriptionOneLiner: "A deeper one-hour conversation" }, { type: "group_40", pricePaise: 99900, maxParticipants: 6, descriptionOneLiner: "Learn together in a small group" }] }, availability: { create: [{ dayOfWeek: 1, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 2, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 3, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 5, startTime: "17:00", endTime: "19:00" }, { dayOfWeek: 6, startTime: "10:00", endTime: "13:00" }] } } });
     return account;
   });
-  await sendEmail({ to: user.email, subject: "Your AlumNow mentor application has been submitted", body: `Welcome ${parsed.data.fullName}. Your mentor application has been submitted and is pending review by our team. You will be notified once your profile is approved.`, eventType: "alumni_application_submitted" }, user.id);
+  try {
+    await sendEmail({ to: user.email, subject: "Your AlumNow mentor application has been submitted", body: `Welcome ${parsed.data.fullName}. Your mentor application has been submitted and is pending review by our team. You will be notified once your profile is approved.`, eventType: "alumni_application_submitted" }, user.id);
+  } catch (error) {
+    console.warn("applyAsAlumni notification failed", error);
+  }
   return { success: true, data: { redirectTo: "/alumni/dashboard" } };
 }
 
