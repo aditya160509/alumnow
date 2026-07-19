@@ -28,7 +28,7 @@ export async function applyAsAlumni(input: unknown): Promise<ApiResponse<{ redir
   return { success: true, data: { redirectTo: "/alumni/dashboard" } };
 }
 
-export type AlumniListFilters = { search?: string; university?: string; country?: string; course?: string; studyLevel?: string; gradYearMin?: number; gradYearMax?: number; qsTiers?: string[]; priceMin?: number; priceMax?: number; languages?: string[]; minRating?: string; availability?: string; sessionType?: string; sortBy?: string; page?: number; pageSize?: number };
+export type AlumniListFilters = { search?: string; university?: string; country?: string; course?: string; studyLevel?: string; gradYearMin?: number; gradYearMax?: number; qsTiers?: string[]; priceMin?: number; priceMax?: number; languages?: string[]; minRating?: string; availability?: string; sortBy?: string; page?: number; pageSize?: number };
 
 const alumniInclude = { sessionTypes: true, availability: true } as const;
 
@@ -79,13 +79,6 @@ export async function listAlumni(filters: AlumniListFilters = {}) {
       if (filters.priceMin != null) priceFilter.gte = Math.round(filters.priceMin * 100);
       if (filters.priceMax != null) priceFilter.lte = Math.round(filters.priceMax * 100);
       where.sessionTypes = { some: { pricePaise: priceFilter } };
-    }
-    if (filters.sessionType === "1:1") {
-      const existing = where.sessionTypes as { some?: Record<string, unknown> } | undefined;
-      where.sessionTypes = { some: { ...(existing?.some ?? {}), type: { in: ["call_30", "call_45", "call_60"] } } };
-    } else if (filters.sessionType === "group") {
-      const existing = where.sessionTypes as { some?: Record<string, unknown> } | undefined;
-      where.sessionTypes = { some: { ...(existing?.some ?? {}), type: "group_40" } };
     }
     if (filters.availability === "this_week") {
       where.availability = { some: { dayOfWeek: new Date().getDay() } };

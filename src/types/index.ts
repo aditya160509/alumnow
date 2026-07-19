@@ -149,7 +149,6 @@ export interface AlumniFilters {
   qsTiers?: string[];
   minRating?: string;
   availability?: "this_week" | "this_month" | "any";
-  sessionType?: "1:1" | "group" | "both";
   search?: string;
   sortBy?: "relevance" | "rating" | "newest" | "fastest_response";
   topMentorOnly?: boolean;

@@ -26,7 +26,6 @@ export async function GET(request: Request) {
       languages: languages.length > 0 ? languages : undefined,
       minRating: params.get("minRating") ?? undefined,
       availability: params.get("availability") ?? undefined,
-      sessionType: params.get("sessionType") ?? undefined,
       sortBy: params.get("sortBy") ?? undefined,
       page,
       pageSize: pageSize ? Number(pageSize) : undefined,

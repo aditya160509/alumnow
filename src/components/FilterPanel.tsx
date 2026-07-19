@@ -1,19 +1,12 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { SlidersHorizontal, X, ChevronDown, ChevronUp, Book, Globe, Star, BookOpen, Award, Calendar, GraduationCap, Video, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { SlidersHorizontal, X, ChevronDown, ChevronUp, Book, Globe, Star, BookOpen, Award, Calendar, GraduationCap, Clock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { AlumniFilters } from "@/types";
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 type Options = { universities: string[]; countries: string[]; courses: string[] };
+
+const INITIAL: AlumniFilters = {};
 
 const qsTierOptions = [
   { value: "top10", label: "Top 10" },
@@ -82,13 +75,13 @@ function ChipGroup({ options, selected, onChange }: { options: { value: string; 
   );
 }
 
-function PillGroup<T extends string>({ options, selected, onChange }: { options: { value: T; label: string }[]; selected: T; onChange: (v: T) => void }) {
+function PillGroup<T extends string>({ options, selected, onChange }: { options: { value: T; label: string }[]; selected: T | ""; onChange: (v: T | undefined) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt, index) => (
         <button
           key={`${opt.value}-${index}`}
-          onClick={() => onChange(opt.value)}
+          onClick={() => onChange(opt.value === selected ? undefined : opt.value)}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 hover:scale-105 ${selected === opt.value ? "chip-active" : "chip-inactive"}`}
         >
           {opt.label}
@@ -115,6 +108,11 @@ function DualRangeSlider({ min, max, value, onChange }: { min: number; max: numb
     if (next[0] !== min || next[1] !== max) onChange(next);
     else onChange(undefined);
   };
+
+  useEffect(() => {
+    setLocal(value ?? [min, max]);
+  }, [value, min, max]);
+
   const range = max - min;
   const leftPct = ((minVal - min) / range) * 100;
   const rightPct = ((max - maxVal) / range) * 100;
@@ -143,6 +141,20 @@ function DualRangeSlider({ min, max, value, onChange }: { min: number; max: numb
   );
 }
 
+function countActive(d: AlumniFilters) {
+  return [
+    d.university,
+    d.country,
+    d.course,
+    d.studyLevel,
+    d.gradYearMin || d.gradYearMax ? "grad" : null,
+    d.qsTiers?.length ? `qs-${d.qsTiers.length}` : null,
+    (d.availability && d.availability !== "any") ? d.availability : null,
+    d.minRating ? "rating" : null,
+    d.topMentorOnly ? "topMentor" : null,
+  ].filter(Boolean).length;
+}
+
 export function FilterPanel({
   filters,
   options,
@@ -162,45 +174,51 @@ export function FilterPanel({
   const [courseInput, setCourseInput] = useState(filters.course ?? "");
   const [countryInput, setCountryInput] = useState("");
 
-  const debouncedUni = useDebounce(uniInput, 300);
-  const debouncedCourse = useDebounce(courseInput, 300);
-  const debouncedCountryInput = useDebounce(countryInput, 300);
-
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const [draft, setDraft] = useState<AlumniFilters>({ ...filters });
 
   useEffect(() => {
-    onChangeRef.current({ university: debouncedUni || undefined });
-  }, [debouncedUni]);
-
-  useEffect(() => {
-    onChangeRef.current({ course: debouncedCourse || undefined });
-  }, [debouncedCourse]);
-
-  useEffect(() => {
+    setDraft({ ...filters });
     setUniInput(filters.university ?? "");
-  }, [filters.university]);
-
-  useEffect(() => {
     setCourseInput(filters.course ?? "");
-  }, [filters.course]);
+    setCountryInput("");
+  }, [filters]);
+
+  const updateDraft = (partial: Partial<AlumniFilters>) => {
+    setDraft((prev) => ({ ...prev, ...partial }));
+  };
+
+  const handleApply = () => {
+    onChange({
+      course: courseInput || undefined,
+      university: uniInput || undefined,
+      topMentorOnly: draft.topMentorOnly,
+      country: draft.country,
+      minRating: draft.minRating,
+      qsTiers: draft.qsTiers,
+      gradYearMin: draft.gradYearMin,
+      gradYearMax: draft.gradYearMax,
+      studyLevel: draft.studyLevel,
+      availability: draft.availability,
+      search: draft.search,
+    });
+    setDrawerOpen(false);
+  };
+
+  const handleClearAll = () => {
+    setCourseInput("");
+    setUniInput("");
+    setCountryInput("");
+    setDraft({ ...INITIAL });
+    onClear();
+    setDrawerOpen(false);
+  };
 
   const countryList = options.countries.map((c) => ({ value: c, label: c }));
-  const filteredCountries = debouncedCountryInput.trim()
-    ? countryList.filter((c) => c.label.toLowerCase().includes(debouncedCountryInput.toLowerCase()))
+  const filteredCountries = countryInput.trim()
+    ? countryList.filter((c) => c.label.toLowerCase().includes(countryInput.toLowerCase()))
     : countryList;
 
-  const activeCount = [
-    filters.university,
-    filters.country,
-    filters.course,
-    filters.studyLevel && filters.studyLevel !== "both" ? filters.studyLevel : null,
-    (filters.sessionType && filters.sessionType !== "both") ? filters.sessionType : null,
-    filters.gradYearMin || filters.gradYearMax ? "grad" : null,
-    filters.qsTiers?.length ? `qs-${filters.qsTiers.length}` : null,
-    (filters.availability && filters.availability !== "any") ? filters.availability : null,
-    filters.minRating ? "rating" : null,
-  ].filter(Boolean).length;
+  const activeCount = countActive(filters);
 
   const content = (
     <div className="overflow-hidden">
@@ -214,7 +232,7 @@ export function FilterPanel({
             )}
           </div>
           {activeCount > 0 && (
-            <button onClick={onClear} className="text-xs font-semibold text-coral hover:underline transition-all">
+            <button onClick={handleClearAll} className="text-xs font-semibold text-coral hover:underline transition-all">
               Reset
             </button>
           )}
@@ -223,26 +241,48 @@ export function FilterPanel({
 
       {/* Filter sections */}
       <div className="px-5">
-        {/* Top Mentor Filter — highest-intent filter */}
+        {/* Course — primary filter, must be first */}
+        <FilterSection title="Course" count={courseInput ? 1 : 0} icon={<BookOpen size={14} />}>
+          <input
+            type="text"
+            placeholder="Search courses..."
+            className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/15 transition-all placeholder:text-white/25"
+            value={courseInput}
+            onChange={(e) => setCourseInput(e.target.value)}
+          />
+        </FilterSection>
+
+        {/* University */}
+        <FilterSection title="University" count={uniInput ? 1 : 0} icon={<Book size={14} />}>
+          <input
+            type="text"
+            placeholder="Search universities..."
+            className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/15 transition-all placeholder:text-white/25"
+            value={uniInput}
+            onChange={(e) => setUniInput(e.target.value)}
+          />
+        </FilterSection>
+
+        {/* Top Mentor */}
         <FilterSection title="Top Mentor" defaultOpen={true} icon={<Award size={14} className="text-[#e8573a]" />}>
           <button
-            onClick={() => onChange({ topMentorOnly: filters.topMentorOnly ? undefined : true })}
+            onClick={() => updateDraft({ topMentorOnly: draft.topMentorOnly ? undefined : true })}
             className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
-              filters.topMentorOnly
+              draft.topMentorOnly
                 ? "text-white"
                 : "text-white/40 hover:text-white/60"
             }`}
             style={{
-              background: filters.topMentorOnly
+              background: draft.topMentorOnly
                 ? "linear-gradient(90deg, rgba(232,87,58,0.15) 0%, rgba(232,87,58,0.06) 100%)"
                 : "rgba(255,255,255,0.03)",
-              border: `1px solid ${filters.topMentorOnly ? "rgba(232,87,58,0.3)" : "rgba(255,255,255,0.06)"}`,
+              border: `1px solid ${draft.topMentorOnly ? "rgba(232,87,58,0.3)" : "rgba(255,255,255,0.06)"}`,
             }}
           >
             <span
               className="inline-flex items-center justify-center h-5 w-5 rounded-full shrink-0"
               style={{
-                background: filters.topMentorOnly
+                background: draft.topMentorOnly
                   ? "linear-gradient(90deg, #FF7A57 0%, #E8573A 100%)"
                   : "rgba(255,255,255,0.08)",
               }}
@@ -254,19 +294,8 @@ export function FilterPanel({
           </button>
         </FilterSection>
 
-        {/* University */}
-        <FilterSection title="University" count={filters.university ? 1 : 0} icon={<Book size={14} />}>
-          <input
-            type="text"
-            placeholder="Search universities..."
-            className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/15 transition-all placeholder:text-white/25"
-            value={uniInput}
-            onChange={(e) => setUniInput(e.target.value)}
-          />
-        </FilterSection>
-
         {/* Country */}
-        <FilterSection title="Country" count={filters.country ? 1 : 0} icon={<Globe size={14} />}>
+        <FilterSection title="Country" count={draft.country ? 1 : 0} icon={<Globe size={14} />}>
           <div className="space-y-2">
             <input
               type="text"
@@ -278,11 +307,11 @@ export function FilterPanel({
             {filteredCountries.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                 {filteredCountries.map((c) => {
-                  const active = filters.country === c.value;
+                  const active = draft.country === c.value;
                   return (
                     <button
                       key={c.value}
-                      onClick={() => onChange({ country: active ? undefined : c.value })}
+                      onClick={() => updateDraft({ country: active ? undefined : c.value })}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 hover:scale-105 ${active ? "chip-active" : "chip-inactive"}`}
                     >
                       {c.label}
@@ -297,33 +326,22 @@ export function FilterPanel({
         </FilterSection>
 
         {/* Minimum Rating */}
-        <FilterSection title="Minimum Rating" count={filters.minRating ? 1 : 0} icon={<Star size={14} />}>
-          <PillGroup options={ratingOptions} selected={filters.minRating ?? ""} onChange={(v) => onChange({ minRating: v || undefined })} />
-        </FilterSection>
-
-        {/* Course */}
-        <FilterSection title="Course" count={filters.course ? 1 : 0} icon={<BookOpen size={14} />}>
-          <input
-            type="text"
-            placeholder="Search courses..."
-            className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/15 transition-all placeholder:text-white/25"
-            value={courseInput}
-            onChange={(e) => setCourseInput(e.target.value)}
-          />
+        <FilterSection title="Minimum Rating" count={draft.minRating ? 1 : 0} icon={<Star size={14} />}>
+          <PillGroup options={ratingOptions} selected={draft.minRating ?? ""} onChange={(v) => updateDraft({ minRating: v })} />
         </FilterSection>
 
         {/* QS Ranking */}
-        <FilterSection title="QS Ranking" count={filters.qsTiers?.length} icon={<Award size={14} />}>
-          <ChipGroup options={qsTierOptions} selected={filters.qsTiers} onChange={(vals) => onChange({ qsTiers: vals.length > 0 ? vals : undefined })} />
+        <FilterSection title="QS Ranking" count={draft.qsTiers?.length} icon={<Award size={14} />}>
+          <ChipGroup options={qsTierOptions} selected={draft.qsTiers} onChange={(vals) => updateDraft({ qsTiers: vals.length > 0 ? vals : undefined })} />
         </FilterSection>
 
         {/* Graduation Year */}
-        <FilterSection title="Graduation Year" count={filters.gradYearMin || filters.gradYearMax ? 1 : 0} icon={<Calendar size={14} />}>
+        <FilterSection title="Graduation Year" count={draft.gradYearMin || draft.gradYearMax ? 1 : 0} icon={<Calendar size={14} />}>
           <DualRangeSlider
             min={GRAD_YEAR_MIN}
             max={GRAD_YEAR_MAX}
-            value={filters.gradYearMin || filters.gradYearMax ? [filters.gradYearMin ?? GRAD_YEAR_MIN, filters.gradYearMax ?? GRAD_YEAR_MAX] : undefined}
-            onChange={(val) => onChange({ gradYearMin: val?.[0], gradYearMax: val?.[1] })}
+            value={draft.gradYearMin || draft.gradYearMax ? [draft.gradYearMin ?? GRAD_YEAR_MIN, draft.gradYearMax ?? GRAD_YEAR_MAX] : undefined}
+            onChange={(val) => updateDraft({ gradYearMin: val?.[0], gradYearMax: val?.[1] })}
           />
         </FilterSection>
 
@@ -331,25 +349,11 @@ export function FilterPanel({
         <FilterSection title="Study Level" icon={<GraduationCap size={14} />}>
           <PillGroup
             options={[
-              { value: "both" as const, label: "All" },
               { value: "undergraduate" as const, label: "Undergrad" },
               { value: "postgraduate" as const, label: "Postgrad" },
             ]}
-            selected={filters.studyLevel ?? "both"}
-            onChange={(v) => onChange({ studyLevel: v === "both" ? undefined : v })}
-          />
-        </FilterSection>
-
-        {/* Session Type */}
-        <FilterSection title="Session Type" icon={<Video size={14} />}>
-          <PillGroup
-            options={[
-              { value: "both" as const, label: "All" },
-              { value: "1:1" as const, label: "1-on-1" },
-              { value: "group" as const, label: "Group" },
-            ]}
-            selected={filters.sessionType ?? "both"}
-            onChange={(v) => onChange({ sessionType: v === "both" ? undefined : v })}
+            selected={draft.studyLevel ?? ""}
+            onChange={(v) => updateDraft({ studyLevel: v })}
           />
         </FilterSection>
 
@@ -357,24 +361,28 @@ export function FilterPanel({
         <FilterSection title="Availability" icon={<Clock size={14} />}>
           <PillGroup
             options={[
-              { value: "any" as const, label: "Any" },
               { value: "this_week" as const, label: "This week" },
               { value: "this_month" as const, label: "This month" },
             ]}
-            selected={filters.availability ?? "any"}
-            onChange={(v) => onChange({ availability: v === "any" ? undefined : v })}
+            selected={draft.availability ?? ""}
+            onChange={(v) => updateDraft({ availability: v })}
           />
         </FilterSection>
       </div>
 
-      {/* Apply button */}
-      <div className="px-5 py-4">
-        <Button
-          className="w-full rounded-lg"
-          onClick={() => { if (drawerOpen) setDrawerOpen(false); }}
-        >
+      {/* Apply + Clear All buttons */}
+      <div className="px-5 py-4 space-y-2">
+        <Button className="w-full rounded-lg" onClick={handleApply}>
           Apply Filters
         </Button>
+        {activeCount > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="w-full text-center text-xs font-medium text-white/40 hover:text-white/70 transition-colors py-1"
+          >
+            Clear all filters
+          </button>
+        )}
       </div>
     </div>
   );

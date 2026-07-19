@@ -54,7 +54,6 @@ function filtersFromSearchParams(sp: URLSearchParams): AlumniFilters {
     qsTiers: qsTiers.length > 0 ? qsTiers : undefined,
     minRating: sp.get("minRating") ?? undefined,
     availability: (sp.get("availability") as AlumniFilters["availability"]) ?? undefined,
-    sessionType: (sp.get("sessionType") as AlumniFilters["sessionType"]) ?? undefined,
     sortBy: (sp.get("sortBy") as AlumniFilters["sortBy"]) ?? undefined,
     topMentorOnly: sp.get("topMentorOnly") === "true" ? true : undefined,
   };
@@ -73,7 +72,6 @@ function filtersToParams(filters: AlumniFilters): string {
 const activeFilterLabels: Record<string, (v: any) => string> = {
   search: (v) => v,
   availability: (v: string) => v === "this_week" ? "This week" : "This month",
-  sessionType: (v: string) => v === "1:1" ? "1-on-1" : "Group",
   studyLevel: (v: string) => v === "undergraduate" ? "Undergrad" : "Postgrad",
   qsTiers: (v: string[]) => v.map((t) => `QS ${t}`).join(", "),
   minRating: (v: string) => `${v}+ stars`,
@@ -168,10 +166,9 @@ function BrowsePageContent() {
   const totalItems = data?.total ?? 0;
 
   const updateFilters = useCallback((next: Partial<AlumniFilters>) => {
-    const merged = { ...filters, ...next };
-    const qs = filtersToParams(merged);
+    const qs = filtersToParams(next);
     router.replace(`/browse${qs ? `?${qs}` : ""}`, { scroll: false });
-  }, [filters, router]);
+  }, [router]);
 
   const clearFilters = useCallback(() => {
     router.replace("/browse", { scroll: false });

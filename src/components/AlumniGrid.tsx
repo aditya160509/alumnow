@@ -75,7 +75,6 @@ export function AlumniGrid({
     priceMin: "Min price",
     priceMax: "Max price",
     availability: "Availability",
-    sessionType: "Session type",
   };
 
   return (
