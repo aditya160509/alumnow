@@ -59,6 +59,18 @@ export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: 
     }
     if (lastDatabaseError) throw lastDatabaseError;
 
+    // Admin API creation does not establish the browser session. Sign the new
+    // user in through the SSR client so the dashboard redirect is authenticated.
+    const supabase = await createServerSupabaseClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: parsed.password,
+    });
+    if (signInError) {
+      console.error("signup session error:", signInError.message);
+      return { success: false, error: "Account created, but we could not start your session. Please sign in." };
+    }
+
     return { success: true, data: { redirectTo: "/dashboard" } };
   } catch (error) {
     if (error instanceof Error && "flatten" in error) return { success: false, error: "Please check your details." };
