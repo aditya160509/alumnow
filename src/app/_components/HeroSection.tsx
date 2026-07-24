@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ScrollButton } from "./ScrollButton";
 import { MetalFx } from "metal-fx";
 import { useEffect, useState } from "react";
+
+const LightPillar = dynamic(() => import("@/components/LightPillar/LightPillar"), { ssr: false });
 
 export function HeroSection() {
   const [mounted, setMounted] = useState(false);
@@ -15,6 +18,23 @@ export function HeroSection() {
       id="hero"
       className="relative min-h-[100dvh] overflow-hidden bg-[#0D0D0D] text-white"
     >
+      {/* Three.js light pillar backdrop */}
+      <div className="absolute inset-0">
+        <LightPillar
+          topColor="#F97316"
+          bottomColor="#000000"
+          intensity={0.6}
+          rotationSpeed={0.3}
+          glowAmount={0.005}
+          pillarWidth={3.0}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={0}
+          interactive={false}
+          mixBlendMode="normal"
+        />
+      </div>
+
       {/* Dual radial glows for depth */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,rgba(232,87,58,0.10),transparent_55%)] opacity-80" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_80%,rgba(232,87,58,0.04),transparent_50%)]" />
@@ -40,7 +60,7 @@ export function HeroSection() {
         }
       `}</style>
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-6 py-6 sm:px-10 lg:px-16">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-6 py-6 pt-28 sm:px-10 sm:pt-32 lg:px-16">
         <div className="flex flex-1 flex-col justify-center">
           <div className="max-w-4xl">
             <p className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.20em] text-white/50 sm:text-sm">
