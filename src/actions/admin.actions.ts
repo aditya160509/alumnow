@@ -42,7 +42,7 @@ export async function getAllAlumni(opts?: {
   const page = opts?.page ?? 1;
   const pageSize = opts?.pageSize ?? 20;
   const params = new URLSearchParams({
-    select: "*,user:User(email,phone),sessionTypes:SessionTypeOffering(*),availability:AlumniAvailability(*)",
+    select: "*,user:User!AlumniProfile_userId_fkey(email,phone),sessionTypes:SessionTypeOffering(*),availability:AlumniAvailability(*)",
     order: "createdAt.desc",
     offset: String((page - 1) * pageSize),
     limit: String(pageSize),
