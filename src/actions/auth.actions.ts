@@ -1,7 +1,6 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/utils/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, signupAlumniSchema } from "@/lib/validation";
 import { sendEmail, emailTemplates } from "@/lib/email";
 import { redirect } from "next/navigation";
@@ -72,6 +71,75 @@ async function createStudentUserRecord(input: {
     }),
   });
   if (!profileRes.ok) throw new Error(`StudentProfile create failed: ${profileRes.status} ${await profileRes.text()}`);
+}
+
+async function createAlumniUserRecord(input: {
+  id: string;
+  email: string;
+  phone: string;
+  fullName: string;
+  profilePhotoUrl?: string;
+  universityName: string;
+  course: string;
+  country: string;
+  graduationYearJbcn: number;
+  bio?: string;
+  languages?: string;
+  sessionTypes: { type: string; pricePaise: number; maxParticipants?: number; descriptionOneLiner?: string }[];
+}) {
+  const now = new Date().toISOString();
+  const userRes = await fetch(`${supabaseUrl}/rest/v1/User`, {
+    method: "POST",
+    headers: restHeaders({ Prefer: "return=minimal" }),
+    body: JSON.stringify({
+      id: input.id,
+      email: input.email,
+      phone: input.phone,
+      role: "alumnus",
+      createdAt: now,
+      updatedAt: now,
+      emailVerifiedAt: now,
+    }),
+  });
+  if (!userRes.ok) throw new Error(`User create failed: ${userRes.status} ${await userRes.text()}`);
+
+  const alumniId = crypto.randomUUID();
+  const profileRes = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile`, {
+    method: "POST",
+    headers: restHeaders({ Prefer: "return=minimal" }),
+    body: JSON.stringify({
+      id: alumniId,
+      userId: input.id,
+      fullName: input.fullName,
+      profilePhotoUrl: input.profilePhotoUrl,
+      universityName: input.universityName,
+      course: input.course,
+      country: input.country,
+      graduationYearJbcn: input.graduationYearJbcn,
+      bio: input.bio,
+      languages: input.languages ? JSON.stringify(input.languages.split(",").map((l) => l.trim()).filter(Boolean)) : "[]",
+      verificationStatus: "pending",
+      isVerifiedJbcnAlumnus: false,
+      createdAt: now,
+      updatedAt: now,
+    }),
+  });
+  if (!profileRes.ok) throw new Error(`AlumniProfile create failed: ${profileRes.status} ${await profileRes.text()}`);
+
+  const sessionRows = input.sessionTypes.map((st) => ({
+    id: crypto.randomUUID(),
+    alumniId,
+    type: st.type,
+    pricePaise: st.pricePaise,
+    maxParticipants: st.maxParticipants ?? 1,
+    descriptionOneLiner: st.descriptionOneLiner,
+  }));
+  const sessionRes = await fetch(`${supabaseUrl}/rest/v1/SessionTypeOffering`, {
+    method: "POST",
+    headers: restHeaders({ Prefer: "return=minimal" }),
+    body: JSON.stringify(sessionRows),
+  });
+  if (!sessionRes.ok) throw new Error(`SessionTypeOffering create failed: ${sessionRes.status} ${await sessionRes.text()}`);
 }
 
 export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: string }>> {
@@ -164,7 +232,7 @@ export async function signupAlumni(input: {
     const { data } = parsed;
     const email = data.email.trim().toLowerCase();
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await findUserByEmail(email);
     if (existing) return { success: false, error: "An account with this email already exists." };
 
     const authUser = await createUserWithAdmin({
@@ -177,38 +245,20 @@ export async function signupAlumni(input: {
       return { success: false, error: "Could not create account. Please try again." };
     }
 
-    const userData = {
+    await createAlumniUserRecord({
       id: authUser.id,
-      email, phone: data.phone, role: "alumnus", emailVerifiedAt: new Date(),
-      alumniProfile: {
-        create: {
-          fullName: data.fullName,
-          profilePhotoUrl: data.profilePhotoUrl,
-          universityName: data.universityName,
-          course: data.course,
-          country: data.country,
-          graduationYearJbcn: data.graduationYearJbcn,
-          bio: data.bio,
-          languages: data.languages ? JSON.stringify(data.languages.split(",").map((l: string) => l.trim()).filter(Boolean)) : "[]",
-          verificationStatus: "pending",
-          isVerifiedJbcnAlumnus: false,
-          sessionTypes: { create: data.sessionTypes.map((st) => ({ type: st.type, pricePaise: st.pricePaise, maxParticipants: st.maxParticipants ?? 1, descriptionOneLiner: st.descriptionOneLiner })) },
-        },
-      },
-    };
-
-    let lastDatabaseError: unknown;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        await prisma.user.create({ data: userData });
-        lastDatabaseError = undefined;
-        break;
-      } catch (error) {
-        lastDatabaseError = error;
-        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
-      }
-    }
-    if (lastDatabaseError) throw lastDatabaseError;
+      email,
+      phone: data.phone,
+      fullName: data.fullName,
+      profilePhotoUrl: data.profilePhotoUrl,
+      universityName: data.universityName,
+      course: data.course,
+      country: data.country,
+      graduationYearJbcn: data.graduationYearJbcn,
+      bio: data.bio,
+      languages: data.languages,
+      sessionTypes: data.sessionTypes,
+    });
 
     const supabase = await createServerSupabaseClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
