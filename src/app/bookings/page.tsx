@@ -59,7 +59,7 @@ export default function BookingsPage() {
       <div className="flex items-end justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#E8573A" }}>
-            Your AlumNow
+            Your alumnow
           </p>
           <h1 className="mt-2 text-3xl font-bold text-primary">Bookings</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage your sessions with alumni</p>

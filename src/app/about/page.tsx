@@ -36,7 +36,7 @@ export default function AboutPage() {
           <div className="max-w-4xl pb-8">
             <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[.2em] text-white/60">
               <span className="h-px w-10 bg-coral" />
-              About AlumNow
+              About alumnow
             </p>
             <h1 className="mt-6 max-w-5xl text-[clamp(4rem,8vw,8rem)] leading-[.86] tracking-[-.05em] font-semibold font-heading">
               The advice that lives{" "}
@@ -44,7 +44,7 @@ export default function AboutPage() {
             </h1>
             <p className="mt-8 max-w-2xl text-base leading-7 text-white/60 sm:text-lg">
               Choosing a university or course is too important to be reduced to
-              a ranking table. AlumNow gives students a direct line to alumni
+              a ranking table. alumnow gives students a direct line to alumni
               who can share what a prospectus cannot.
             </p>
             <div className="mt-9">

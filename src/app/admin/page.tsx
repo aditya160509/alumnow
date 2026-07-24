@@ -6,25 +6,34 @@ import { Users, CalendarDays, IndianRupee, Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboardPage() {
-  const [totalAlumni, totalBookings, totalRevenueResult, pendingReviews, pendingApplications, prevMonthAlumni, prevMonthBookings, prevMonthRevenue] = await Promise.all([
-    prisma.alumniProfile.count(),
-    prisma.booking.count(),
-    prisma.payment.aggregate({ _sum: { amountPaise: true }, where: { status: "verified" } }),
-    prisma.review.count({ where: { moderationStatus: "pending" } }),
-    prisma.alumniProfile.count({ where: { verificationStatus: "pending" } }),
-    prisma.alumniProfile.count({
-      where: { createdAt: { lt: new Date(new Date().setMonth(new Date().getMonth() - 1)) } },
-    }),
-    prisma.booking.count({
-      where: { createdAt: { lt: new Date(new Date().setMonth(new Date().getMonth() - 1)) } },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amountPaise: true },
-      where: { status: "verified", createdAt: { lt: new Date(new Date().setMonth(new Date().getMonth() - 1)) } },
-    }),
-  ]);
+const monthAgo = () => new Date(new Date().setMonth(new Date().getMonth() - 1));
 
+async function getStats() {
+  const [totalAlumni, totalBookings, totalRevenueResult, pendingReviews, pendingApplications, prevMonthAlumni, prevMonthBookings, prevMonthRevenue] = await Promise.all([
+    prisma.alumniProfile.count().catch(() => 0),
+    prisma.booking.count().catch(() => 0),
+    prisma.payment.aggregate({ _sum: { amountPaise: true }, where: { status: "verified" } }).catch(() => ({ _sum: { amountPaise: null } })),
+    prisma.review.count({ where: { moderationStatus: "pending" } }).catch(() => 0),
+    prisma.alumniProfile.count({ where: { verificationStatus: "pending" } }).catch(() => 0),
+    prisma.alumniProfile.count({ where: { createdAt: { lt: monthAgo() } } }).catch(() => 0),
+    prisma.booking.count({ where: { createdAt: { lt: monthAgo() } } }).catch(() => 0),
+    prisma.payment.aggregate({ _sum: { amountPaise: true }, where: { status: "verified", createdAt: { lt: monthAgo() } } }).catch(() => ({ _sum: { amountPaise: null } })),
+  ]);
+  return { totalAlumni, totalBookings, totalRevenueResult, pendingReviews, pendingApplications, prevMonthAlumni, prevMonthBookings, prevMonthRevenue };
+}
+
+export default async function AdminDashboardPage() {
+  const statsData = await getStats().catch(() => null);
+  if (!statsData) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <h2 className="text-2xl font-semibold text-white font-heading">Dashboard unavailable</h2>
+        <p className="mt-2 text-white/40">Could not load dashboard data. Please try again.</p>
+      </div>
+    );
+  }
+
+  const { totalAlumni, totalBookings, totalRevenueResult, pendingReviews, pendingApplications, prevMonthAlumni, prevMonthBookings, prevMonthRevenue } = statsData;
   const totalRevenuePaise = totalRevenueResult._sum.amountPaise ?? 0;
   const prevRevenuePaise = prevMonthRevenue._sum.amountPaise ?? 0;
 

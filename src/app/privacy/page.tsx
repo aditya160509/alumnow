@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Privacy Policy — alumnow.",
-  description: "AlumNow privacy policy. Learn how we handle your data.",
+  description: "alumnow privacy policy. Learn how we handle your data.",
 };
 
 export default function PrivacyPage() {

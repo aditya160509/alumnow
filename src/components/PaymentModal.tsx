@@ -40,7 +40,7 @@ export function PaymentModal({
   useEffect(() => {
     if (!upiId) return;
     setQrLoading(true);
-    const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(alumniName ?? "AlumNow")}${bookingAmount ? `&am=${(bookingAmount / 100).toFixed(2)}` : ""}&cu=INR`;
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(alumniName ?? "alumnow")}${bookingAmount ? `&am=${(bookingAmount / 100).toFixed(2)}` : ""}&cu=INR`;
     if (canvasRef.current) {
       QRCode.toCanvas(canvasRef.current, upiUrl, {
         width: 192,

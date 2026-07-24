@@ -32,21 +32,21 @@ export async function sendEmail(params: EmailParams, userId?: string): Promise<v
 export const emailTemplates = {
   signupVerification: (email: string, name: string) => ({
     to: email,
-    subject: "Welcome to AlumNow! Verify your email",
-    body: `Hi ${name},\n\nWelcome to AlumNow! Your account has been created successfully.\n\nIn production, you'd receive a verification link here. For this demo, you're auto-verified.\n\nStart browsing alumni at /browse`,
+    subject: "Welcome to alumnow! Verify your email",
+    body: `Hi ${name},\n\nWelcome to alumnow! Your account has been created successfully.\n\nIn production, you'd receive a verification link here. For this demo, you're auto-verified.\n\nStart browsing alumni at /browse`,
     eventType: "signup_verification" as const,
   }),
 
   sendPasswordResetEmail: (email: string, token: string) => ({
     to: email,
-    subject: "Reset your AlumNow password",
+    subject: "Reset your alumnow password",
     body: `Reset link: ${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/reset-password?token=${token}\n\nThis link expires in 15 minutes.`,
     eventType: "password_reset_requested" as const,
   }),
 
   sendAlumniWelcome: (email: string, name: string) => ({
     to: email,
-    subject: "Your AlumNow mentor profile is approved",
+    subject: "Your alumnow mentor profile is approved",
     body: `Welcome ${name}. Your profile is live and ready for students to discover.`,
     eventType: "alumni_application_approved" as const,
   }),
@@ -67,8 +67,8 @@ export const emailTemplates = {
 
   paymentVerified: (email: string, amount: string) => ({
     to: email,
-    subject: "Payment Verified — AlumNow",
-    body: `Your payment of ${amount} has been verified.\n\nYour session is confirmed. You can access it from your dashboard.\n\nThank you for using AlumNow!`,
+    subject: "Payment Verified — alumnow",
+    body: `Your payment of ${amount} has been verified.\n\nYour session is confirmed. You can access it from your dashboard.\n\nThank you for using alumnow!`,
     eventType: "payment_verified" as const,
   }),
 };

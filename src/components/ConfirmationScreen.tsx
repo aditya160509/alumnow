@@ -26,7 +26,7 @@ export function ConfirmationScreen({ booking }: Props) {
   const endDate = new Date(booking.scheduledEndAt);
   const duration = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Session with " + booking.alumni.fullName)}&dates=${formatDateForCalendar(startDate)}/${formatDateForCalendar(endDate)}&details=${encodeURIComponent("AlumNow session with " + booking.alumni.fullName)}`;
+  const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Session with " + booking.alumni.fullName)}&dates=${formatDateForCalendar(startDate)}/${formatDateForCalendar(endDate)}&details=${encodeURIComponent("alumnow session with " + booking.alumni.fullName)}`;
 
   return (
     <div className="space-y-6 text-center">

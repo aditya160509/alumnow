@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Terms of Use — alumnow.",
-  description: "AlumNow terms of use. Read our terms and conditions.",
+  description: "alumnow terms of use. Read our terms and conditions.",
 };
 
 export default function TermsPage() {
@@ -29,8 +29,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-semibold text-white mb-3">1. Acceptance of Terms</h2>
               <p>
-                By accessing or using AlumNow, you agree to be bound by these terms. If you do
-                not agree, please do not use the platform. AlumNow is a service that connects
+                By accessing or using alumnow, you agree to be bound by these terms. If you do
+                not agree, please do not use the platform. alumnow is a service that connects
                 students with alumni mentors for informational and educational purposes.
               </p>
             </section>
@@ -38,7 +38,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-semibold text-white mb-3">2. Eligibility</h2>
               <p>
-                You must be at least 16 years old to use AlumNow. By creating an account, you
+                You must be at least 16 years old to use alumnow. By creating an account, you
                 confirm that you meet this age requirement and have the capacity to enter into
                 a binding agreement.
               </p>
@@ -59,7 +59,7 @@ export default function TermsPage() {
               <p>
                 Sessions are booked directly through the platform. Payments are processed by our
                 payment provider. Cancellations made at least 24 hours before a session are
-                eligible for a full refund. No-shows are not eligible for refunds. AlumNow
+                eligible for a full refund. No-shows are not eligible for refunds. alumnow
                 charges a platform fee on each transaction.
               </p>
             </section>
@@ -67,9 +67,9 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-semibold text-white mb-3">5. Intellectual Property</h2>
               <p>
-                All content on AlumNow, including logos, designs, and code, is the property of
-                AlumNow and may not be reproduced without written permission. User-generated
-                content (reviews, profiles) remains the property of the user but grants AlumNow
+                All content on alumnow, including logos, designs, and code, is the property of
+                alumnow and may not be reproduced without written permission. User-generated
+                content (reviews, profiles) remains the property of the user but grants alumnow
                 a license to display it on the platform.
               </p>
             </section>
@@ -77,7 +77,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-semibold text-white mb-3">6. Limitation of Liability</h2>
               <p>
-                AlumNow is an informational platform. We do not guarantee outcomes from mentoring
+                alumnow is an informational platform. We do not guarantee outcomes from mentoring
                 sessions. We are not liable for any decisions made based on information received
                 through the platform. Our total liability shall not exceed the fees paid in the
                 12 months preceding the claim.

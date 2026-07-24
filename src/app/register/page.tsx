@@ -6,6 +6,8 @@ import {
   Check,
   LoaderCircle,
   Upload,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { signup, signupAlumni } from "@/actions/auth.actions";
 import { Button } from "@/components/ui/Button";
@@ -33,6 +35,8 @@ function StudentForm({
   const [school, setSchool] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,11 +93,21 @@ function StudentForm({
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm font-semibold text-white/70">
           Password
-          <Input required minLength={8} type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={`mt-2 ${inputDark}`} placeholder="At least 8 characters" />
+          <div className="relative mt-2">
+            <Input required minLength={8} type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputDark} pr-10`} placeholder="At least 8 characters" />
+            <button type="button" onClick={() => setShowPw((p) => !p)} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </label>
         <label className="block text-sm font-semibold text-white/70">
           Confirm
-          <Input required type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`mt-2 ${inputDark}`} placeholder="Re-enter password" />
+          <div className="relative mt-2">
+            <Input required type={showConfirm ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`${inputDark} pr-10`} placeholder="Re-enter password" />
+            <button type="button" onClick={() => setShowConfirm((p) => !p)} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </label>
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -133,6 +147,8 @@ function AlumniWizard({
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("idle");
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [acc, setAcc] = useState({ fullName: "", email: "", phone: "", password: "", confirmPassword: "" });
   const [profile, setProfile] = useState({ universityName: "", course: "", country: "", graduationYearJbcn: 2023, bio: "", profilePhotoUrl: "" });
@@ -242,8 +258,22 @@ function AlumniWizard({
             <label className="block text-sm font-semibold text-white/70">Phone <Input required placeholder="+919876543210" value={acc.phone} onChange={(e) => setAcc((p) => ({ ...p, phone: e.target.value }))} className={`mt-2 ${inputDark}`} /></label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-semibold text-white/70">Password <Input required minLength={8} type="password" value={acc.password} onChange={(e) => setAcc((p) => ({ ...p, password: e.target.value }))} className={`mt-2 ${inputDark}`} /></label>
-            <label className="block text-sm font-semibold text-white/70">Confirm <Input required type="password" value={acc.confirmPassword} onChange={(e) => setAcc((p) => ({ ...p, confirmPassword: e.target.value }))} className={`mt-2 ${inputDark}`} /></label>
+            <label className="block text-sm font-semibold text-white/70">Password
+              <div className="relative mt-2">
+                <Input required minLength={8} type={showPw ? "text" : "password"} value={acc.password} onChange={(e) => setAcc((p) => ({ ...p, password: e.target.value }))} className={`${inputDark} pr-10`} />
+                <button type="button" onClick={() => setShowPw((p) => !p)} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </label>
+            <label className="block text-sm font-semibold text-white/70">Confirm
+              <div className="relative mt-2">
+                <Input required type={showConfirm ? "text" : "password"} value={acc.confirmPassword} onChange={(e) => setAcc((p) => ({ ...p, confirmPassword: e.target.value }))} className={`${inputDark} pr-10`} />
+                <button type="button" onClick={() => setShowConfirm((p) => !p)} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </label>
           </div>
         </div>
       )}

@@ -26,7 +26,7 @@ export async function applyAsAlumni(input: unknown): Promise<ApiResponse<{ redir
     return account;
   });
   try {
-    await sendEmail({ to: user.email, subject: "Your AlumNow mentor application has been submitted", body: `Welcome ${parsed.data.fullName}. Your mentor application has been submitted and is pending review by our team. You will be notified once your profile is approved.`, eventType: "alumni_application_submitted" }, user.id);
+    await sendEmail({ to: user.email, subject: "Your alumnow mentor application has been submitted", body: `Welcome ${parsed.data.fullName}. Your mentor application has been submitted and is pending review by our team. You will be notified once your profile is approved.`, eventType: "alumni_application_submitted" }, user.id);
   } catch (error) {
     console.warn("applyAsAlumni notification failed", error);
   }

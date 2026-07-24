@@ -1,6 +1,6 @@
-## The question behind AlumNow
+## The question behind alumnow
 
-Choosing a university or course is too important to be reduced to a ranking table. AlumNow gives JBCN students a direct line to alumni who can share the parts of their experience that a prospectus cannot.
+Choosing a university or course is too important to be reduced to a ranking table. alumnow gives JBCN students a direct line to alumni who can share the parts of their experience that a prospectus cannot.
 
 ## What a good session feels like
 

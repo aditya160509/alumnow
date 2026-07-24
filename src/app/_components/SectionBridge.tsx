@@ -85,7 +85,7 @@ export function SectionBridge() {
             style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             Every graduate carries answers students are still searching for.
-            AlumNow closes that gap with a single, honest call.
+            alumnow closes that gap with a single, honest call.
           </p>
         </div>
 
