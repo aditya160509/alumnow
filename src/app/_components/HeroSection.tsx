@@ -2,16 +2,32 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { ScrollButton } from "./ScrollButton";
 import { MetalFx } from "metal-fx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "@/lib/gsap";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 
 const LightPillar = dynamic(() => import("@/components/LightPillar/LightPillar"), { ssr: false });
 
 export function HeroSection() {
   const [mounted, setMounted] = useState(false);
+  const introRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!introRef.current || reducedMotion) return;
+    const targets = introRef.current.querySelectorAll("[data-hero-in]");
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        targets,
+        { y: 24, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.9, ease: "power3.out", stagger: 0.12, delay: 0.1 }
+      );
+    }, introRef);
+    return () => ctx.revert();
+  }, [reducedMotion]);
 
   return (
     <section
@@ -35,24 +51,11 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Dual radial glows for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,rgba(232,87,58,0.10),transparent_55%)] opacity-80" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_80%,rgba(232,87,58,0.04),transparent_50%)]" />
-
-      {/* Breathing pulse animation (overdrive) */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: "radial-gradient(circle at 50% 50%, #e8573a 0%, transparent 70%)",
-          animation: mounted ? "heroPulse 6s ease-in-out infinite" : "none",
-        }}
-      />
+      {/* Ambient depth glow, kept subtle so it never competes with the pillar or the headline */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(0,0,0,0.35),transparent_45%)]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-[#0D0D0D]/40" />
 
       <style>{`
-        @keyframes heroPulse {
-          0%, 100% { transform: scale(1); opacity: 0.04; }
-          50% { transform: scale(1.12); opacity: 0.08; }
-        }
         @keyframes tagPing {
           0% { transform: scale(1); opacity: 0.4; }
           50% { transform: scale(2.2); opacity: 0; }
@@ -60,34 +63,33 @@ export function HeroSection() {
         }
       `}</style>
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-6 py-6 pt-28 sm:px-10 sm:pt-32 lg:px-16">
+      <div ref={introRef} className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-6 py-6 pt-28 sm:px-10 sm:pt-32 lg:px-16">
         <div className="flex flex-1 flex-col justify-center">
           <div className="max-w-4xl">
-            <p className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.20em] text-white/50 sm:text-sm">
+            <p data-hero-in className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.20em] text-white/50 sm:text-sm">
               <span className="relative inline-flex h-2.5 w-2.5">
-                <span className="absolute inset-0 rounded-full bg-coral" style={{ animation: "tagPing 2.4s ease-out infinite" }} />
+                <span className="absolute inset-0 rounded-full bg-coral" style={{ animation: mounted ? "tagPing 2.4s ease-out infinite" : "none" }} />
                 <span className="absolute inset-0 rounded-full bg-coral shadow-[0_0_0_6px_rgba(232,87,58,0.20)]" />
               </span>
               Alumni-Student Connect Platform
             </p>
-            <h1 className="text-[clamp(2.8rem,8vw,7rem)] leading-[.92] tracking-[-0.04em] font-bold font-heading text-white">
-              A clearer path{" "}
-              <span className="text-coral text-glow-coral">to what comes next.</span>
+            <h1
+              data-hero-in
+              className="text-[clamp(2.8rem,7.5vw,6.5rem)] leading-[.94] tracking-[-0.04em] font-bold font-heading text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.6)]"
+            >
+              A clearer path to what comes next<span className="text-coral">.</span>
             </h1>
-            <p className="mt-6 max-w-[42rem] text-[clamp(1rem,1.8vw,1.2rem)] leading-relaxed text-white/45 sm:text-lg font-light tracking-wide">
+            <p data-hero-in className="mt-6 max-w-[42rem] text-[clamp(1rem,1.8vw,1.2rem)] leading-relaxed text-white/50 sm:text-lg font-light tracking-wide">
               Meet verified alumni who can help you choose universities, shape
               applications, and make your next big decision with confidence.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <MetalFx preset="chromatic" strength={1}>
-                <Link href="/browse">
-                  <Button
-                    variant="accent"
-                    className="h-13 rounded-full px-7 text-base font-semibold tracking-tight"
-                  >
-                    Find your mentor{" "}
-                    <ArrowRight size={16} className="ml-2 group-hover:translate-x-0.5 transition-transform" />
-                  </Button>
+            <div data-hero-in className="mt-10 flex flex-wrap items-center gap-4">
+              <MetalFx preset="chromatic" strength={1} theme="dark">
+                <Link href="/browse" className="group inline-flex">
+                  <span className="inline-flex h-12 items-center gap-2 rounded-full bg-coral px-7 text-sm font-semibold text-white transition-all duration-300 group-hover:bg-coral-light">
+                    Find your mentor
+                    <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+                  </span>
                 </Link>
               </MetalFx>
               <ScrollButton target="how-it-works" />

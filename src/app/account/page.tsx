@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import {
   getAccountData,
   updateAccountName,
@@ -172,11 +173,11 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-[#0D0D0D]">
       <div className="max-w-3xl mx-auto px-6 py-10">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <ScrollReveal y={12} duration={0.6} start="top 95%">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#E8573A] mb-1">Account</p>
           <h1 className="text-[28px] font-bold text-white tracking-[-0.02em]">Your profile & settings</h1>
           <p className="text-[13px] text-white/40 mt-1">Manage your personal information and security.</p>
-        </motion.div>
+        </ScrollReveal>
 
         {/* Profile Card */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
