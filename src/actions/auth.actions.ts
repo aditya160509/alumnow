@@ -131,30 +131,51 @@ export async function signupAlumni(input: {
       return { success: false, error: "Could not create account. Please try again." };
     }
 
-    const user = await prisma.user.create({
-      data: {
-        id: authUser.id,
-        email, phone: data.phone, role: "alumnus", emailVerifiedAt: new Date(),
-        alumniProfile: {
-          create: {
-            fullName: data.fullName,
-            profilePhotoUrl: data.profilePhotoUrl,
-            universityName: data.universityName,
-            course: data.course,
-            country: data.country,
-            graduationYearJbcn: data.graduationYearJbcn,
-            bio: data.bio,
-            languages: data.languages ? JSON.stringify(data.languages.split(",").map((l: string) => l.trim()).filter(Boolean)) : "[]",
-            verificationStatus: "pending",
-            isVerifiedJbcnAlumnus: false,
-            sessionTypes: { create: data.sessionTypes.map((st) => ({ type: st.type, pricePaise: st.pricePaise, maxParticipants: st.maxParticipants ?? 1, descriptionOneLiner: st.descriptionOneLiner })) },
-          },
+    const userData = {
+      id: authUser.id,
+      email, phone: data.phone, role: "alumnus", emailVerifiedAt: new Date(),
+      alumniProfile: {
+        create: {
+          fullName: data.fullName,
+          profilePhotoUrl: data.profilePhotoUrl,
+          universityName: data.universityName,
+          course: data.course,
+          country: data.country,
+          graduationYearJbcn: data.graduationYearJbcn,
+          bio: data.bio,
+          languages: data.languages ? JSON.stringify(data.languages.split(",").map((l: string) => l.trim()).filter(Boolean)) : "[]",
+          verificationStatus: "pending",
+          isVerifiedJbcnAlumnus: false,
+          sessionTypes: { create: data.sessionTypes.map((st) => ({ type: st.type, pricePaise: st.pricePaise, maxParticipants: st.maxParticipants ?? 1, descriptionOneLiner: st.descriptionOneLiner })) },
         },
       },
+    };
+
+    let lastDatabaseError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await prisma.user.create({ data: userData });
+        lastDatabaseError = undefined;
+        break;
+      } catch (error) {
+        lastDatabaseError = error;
+        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    if (lastDatabaseError) throw lastDatabaseError;
+
+    const supabase = await createServerSupabaseClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: data.password,
     });
+    if (signInError) {
+      console.error("signupAlumni session error:", signInError.message);
+      return { success: false, error: "Account created, but we could not start your session. Please sign in." };
+    }
 
     try {
-      await sendEmail(emailTemplates.signupVerification(email, data.fullName), user.id);
+      await sendEmail(emailTemplates.signupVerification(email, data.fullName), authUser.id);
     } catch (error) {
       console.warn("signupAlumni notification failed", error);
     }
