@@ -32,7 +32,7 @@ export default async function AlumniProfilePage({ params }: { params: Promise<{ 
     booked = results[1];
     reviews = results[2];
 
-    const groupOfferings = alumni.sessionTypes?.filter((st) => st.type === "group_40") ?? [];
+    const groupOfferings: { id: string; type: string }[] = alumni.sessionTypes?.filter((st: { type: string }) => st.type === "group_40") ?? [];
     if (groupOfferings.length > 0) {
       groupBookedCounts = await getGroupBookingCounts(
         id,

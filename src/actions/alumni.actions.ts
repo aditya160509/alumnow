@@ -35,8 +35,6 @@ export async function applyAsAlumni(input: unknown): Promise<ApiResponse<{ redir
 
 export type AlumniListFilters = { search?: string; university?: string; country?: string; course?: string; studyLevel?: string; gradYearMin?: number; gradYearMax?: number; qsTiers?: string[]; priceMin?: number; priceMax?: number; languages?: string[]; minRating?: string; availability?: string; sortBy?: string; page?: number; pageSize?: number };
 
-const alumniInclude = { sessionTypes: true, availability: true } as const;
-
 function parseLanguages(languages: unknown): string[] {
   if (Array.isArray(languages)) return languages;
   if (typeof languages === "string") {
@@ -45,75 +43,91 @@ function parseLanguages(languages: unknown): string[] {
   return [];
 }
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function restHeaders(extra?: HeadersInit): HeadersInit {
+  return {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    "Content-Type": "application/json",
+    ...extra,
+  };
+}
+
+const ilikeEscape = (value: string) => value.replaceAll("%", "\\%").replaceAll(",", "\\,");
+
+// Reads go straight against the Supabase REST API rather than through the pooled
+// Prisma connection: that pool has proven unreliable in production (see prisma.ts
+// history), and listAlumni previously swallowed those failures into an empty list,
+// which is why approved alumni silently failed to show up on the marketplace.
 export async function listAlumni(filters: AlumniListFilters = {}) {
   try {
     const page = Math.max(1, filters.page ?? 1);
     const pageSize = Math.min(24, Math.max(1, filters.pageSize ?? 20));
     const search = filters.search?.trim();
 
-    const where: Record<string, unknown> = { verificationStatus: "approved" };
+    const params = new URLSearchParams({
+      select: "*,sessionTypes:SessionTypeOffering(*),availability:AlumniAvailability(*)",
+      verificationStatus: "eq.approved",
+      offset: String((page - 1) * pageSize),
+      limit: String(pageSize),
+    });
 
     if (search) {
-      where.OR = [
-        { fullName: { contains: search } },
-        { universityName: { contains: search } },
-        { course: { contains: search } },
-        { bio: { contains: search } },
-      ];
+      const term = ilikeEscape(search);
+      params.set("or", `(fullName.ilike.*${term}*,universityName.ilike.*${term}*,course.ilike.*${term}*,bio.ilike.*${term}*)`);
     }
-    if (filters.university) where.universityName = filters.university;
-    if (filters.country) where.country = filters.country;
-    if (filters.course) where.course = { contains: filters.course };
-    if (filters.studyLevel && filters.studyLevel !== "both") where.currentStudyLevel = filters.studyLevel;
-    if (filters.gradYearMin || filters.gradYearMax) {
-      const gradFilter: Record<string, number> = {};
-      if (filters.gradYearMin) gradFilter.gte = filters.gradYearMin;
-      if (filters.gradYearMax) gradFilter.lte = filters.gradYearMax;
-      where.graduationYearJbcn = gradFilter;
-    }
-    if (filters.qsTiers?.length) where.qsRankingTier = { in: filters.qsTiers };
-    if (filters.minRating) where.ratingAvg = { gte: Number(filters.minRating) };
+    if (filters.university) params.set("universityName", `eq.${filters.university}`);
+    if (filters.country) params.set("country", `eq.${filters.country}`);
+    if (filters.course) params.set("course", `ilike.*${ilikeEscape(filters.course)}*`);
+    if (filters.studyLevel && filters.studyLevel !== "both") params.set("currentStudyLevel", `eq.${filters.studyLevel}`);
+    if (filters.gradYearMin) params.append("graduationYearJbcn", `gte.${filters.gradYearMin}`);
+    if (filters.gradYearMax) params.append("graduationYearJbcn", `lte.${filters.gradYearMax}`);
+    if (filters.qsTiers?.length) params.set("qsRankingTier", `in.(${filters.qsTiers.join(",")})`);
+    if (filters.minRating) params.set("ratingAvg", `gte.${Number(filters.minRating)}`);
+
+    if (filters.sortBy === "rating") params.set("order", "ratingAvg.desc.nullslast");
+    else if (filters.sortBy === "newest") params.set("order", "id.desc");
+    else params.set("order", "fullName.asc");
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?${params.toString()}`, {
+      headers: restHeaders({ Prefer: "count=exact" }),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`Failed to load alumni: ${res.status} ${await res.text()}`);
+
+    let items = (await res.json()) as any[];
+    const range = res.headers.get("content-range") ?? "";
+    const total = Number(range.split("/")[1] ?? items.length);
+
     if (filters.languages?.length) {
-      where.OR = [
-        ...((where.OR as Record<string, unknown>[] | undefined) ?? []),
-        ...filters.languages.map((language) => ({ languages: { contains: language } })),
-      ];
+      items = items.filter((item) => filters.languages!.some((lang) => String(item.languages ?? "").includes(lang)));
     }
     if (filters.priceMin != null || filters.priceMax != null) {
-      const priceFilter: Record<string, number> = {};
-      if (filters.priceMin != null) priceFilter.gte = Math.round(filters.priceMin * 100);
-      if (filters.priceMax != null) priceFilter.lte = Math.round(filters.priceMax * 100);
-      where.sessionTypes = { some: { pricePaise: priceFilter } };
+      const min = filters.priceMin != null ? Math.round(filters.priceMin * 100) : -Infinity;
+      const max = filters.priceMax != null ? Math.round(filters.priceMax * 100) : Infinity;
+      items = items.filter((item) => (item.sessionTypes ?? []).some((s: any) => s.pricePaise >= min && s.pricePaise <= max));
     }
     if (filters.availability === "this_week") {
-      where.availability = { some: { dayOfWeek: new Date().getDay() } };
+      const dow = new Date().getDay();
+      items = items.filter((item) => (item.availability ?? []).some((a: any) => a.dayOfWeek === dow));
     } else if (filters.availability === "this_month") {
-      where.availability = { some: {} };
+      items = items.filter((item) => (item.availability ?? []).length > 0);
     }
-
-    let orderBy: Record<string, unknown> = { fullName: "asc" };
-    if (filters.sortBy === "rating") {
-      orderBy = { ratingAvg: { sort: "desc", nulls: "last" } };
-    } else if (filters.sortBy === "newest") {
-      orderBy = { id: "desc" };
-    }
-
-    const [items, total] = await Promise.all([
-      prisma.alumniProfile.findMany({
-        where,
-        include: alumniInclude,
-        orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.alumniProfile.count({ where }),
-    ]);
 
     const session = await getServerSession();
-    const saved = session?.user?.id
-      ? await prisma.savedAlumni.findMany({ where: { studentId: session.user.id }, select: { alumniId: true } })
-      : [];
-    const savedIds = new Set(saved.map((s) => s.alumniId));
+    const savedIds = new Set<string>();
+    if (session?.user?.id) {
+      const savedRes = await fetch(
+        `${supabaseUrl}/rest/v1/SavedAlumni?select=alumniId&studentId=eq.${encodeURIComponent(session.user.id)}`,
+        { headers: restHeaders(), cache: "no-store" }
+      );
+      if (savedRes.ok) {
+        const saved = (await savedRes.json()) as { alumniId: string }[];
+        saved.forEach((s) => savedIds.add(s.alumniId));
+      }
+    }
 
     return {
       items: items.map((item) => ({
@@ -135,19 +149,30 @@ export async function listAlumni(filters: AlumniListFilters = {}) {
 export async function getAlumniById(id: string) {
   try {
     const session = await getServerSession();
-    const alumni = await prisma.alumniProfile.findUnique({
-      where: { id, verificationStatus: "approved" },
-      include: { sessionTypes: true, availability: true },
+    const params = new URLSearchParams({
+      select: "*,sessionTypes:SessionTypeOffering(*),availability:AlumniAvailability(*)",
+      id: `eq.${id}`,
+      verificationStatus: "eq.approved",
     });
+    const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?${params.toString()}`, {
+      headers: restHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`Failed to load alumni: ${res.status} ${await res.text()}`);
+    const rows = (await res.json()) as any[];
+    const alumni = rows[0];
     if (!alumni) return null;
 
-    const saved = session?.user?.id
-      ? await prisma.savedAlumni.findUnique({
-          where: { studentId_alumniId: { studentId: session.user.id, alumniId: id } },
-        })
-      : null;
+    let saved = false;
+    if (session?.user?.id) {
+      const savedRes = await fetch(
+        `${supabaseUrl}/rest/v1/SavedAlumni?select=alumniId&studentId=eq.${encodeURIComponent(session.user.id)}&alumniId=eq.${encodeURIComponent(id)}`,
+        { headers: restHeaders(), cache: "no-store" }
+      );
+      if (savedRes.ok) saved = ((await savedRes.json()) as unknown[]).length > 0;
+    }
 
-    return { ...alumni, languages: parseLanguages(alumni.languages), isSaved: !!saved };
+    return { ...alumni, languages: parseLanguages(alumni.languages), isSaved: saved };
   } catch (error) {
     console.error("getAlumniById error:", error);
     return null;
@@ -156,33 +181,24 @@ export async function getAlumniById(id: string) {
 
 export async function getFilterOptions(country?: string) {
   try {
-    const baseWhere: Record<string, unknown> = { verificationStatus: "approved" };
+    const fetchDistinct = async (column: string, filterByCountry: boolean) => {
+      const params = new URLSearchParams({ select: column, verificationStatus: "eq.approved", order: `${column}.asc` });
+      if (filterByCountry && country) params.set("country", `eq.${country}`);
+      const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?${params.toString()}`, {
+        headers: restHeaders(),
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`Failed to load filter options: ${res.status} ${await res.text()}`);
+      const rows = (await res.json()) as Record<string, string>[];
+      return Array.from(new Set(rows.map((r) => r[column]).filter(Boolean))) as string[];
+    };
 
     const [universities, countries, courses] = await Promise.all([
-      prisma.alumniProfile.findMany({
-        where: country ? { ...baseWhere, country } : baseWhere,
-        distinct: ["universityName"],
-        select: { universityName: true },
-        orderBy: { universityName: "asc" }
-      }),
-      prisma.alumniProfile.findMany({
-        where: baseWhere,
-        distinct: ["country"],
-        select: { country: true },
-        orderBy: { country: "asc" }
-      }),
-      prisma.alumniProfile.findMany({
-        where: country ? { ...baseWhere, country } : baseWhere,
-        distinct: ["course"],
-        select: { course: true },
-        orderBy: { course: "asc" }
-      }),
+      fetchDistinct("universityName", true),
+      fetchDistinct("country", false),
+      fetchDistinct("course", true),
     ]);
-    return {
-      universities: universities.map((u) => u.universityName),
-      countries: countries.map((c) => c.country),
-      courses: courses.map((c) => c.course)
-    };
+    return { universities, countries, courses };
   } catch (error) {
     console.error("getFilterOptions error:", error);
     return { universities: [], countries: [], courses: [] };
