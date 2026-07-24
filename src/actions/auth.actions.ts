@@ -11,12 +11,75 @@ import { createUserWithAdmin } from "@/lib/supabase-admin";
 import type { ApiResponse } from "@/types";
 import { ZodError } from "zod";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function restHeaders(extra?: HeadersInit): HeadersInit {
+  return {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    "Content-Type": "application/json",
+    ...extra,
+  };
+}
+
+async function findUserByEmail(email: string) {
+  const params = new URLSearchParams({ select: "id,email", email: `eq.${email}`, limit: "1" });
+  const res = await fetch(`${supabaseUrl}/rest/v1/User?${params.toString()}`, {
+    headers: restHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`User lookup failed: ${res.status} ${await res.text()}`);
+  const rows = await res.json() as { id: string; email: string }[];
+  return rows[0] ?? null;
+}
+
+async function createStudentUserRecord(input: {
+  id: string;
+  email: string;
+  phone: string;
+  fullName: string;
+  dateOfBirth: Date | null;
+  currentGrade: string;
+  school: string;
+}) {
+  const now = new Date().toISOString();
+  const userRes = await fetch(`${supabaseUrl}/rest/v1/User`, {
+    method: "POST",
+    headers: restHeaders({ Prefer: "return=minimal" }),
+    body: JSON.stringify({
+      id: input.id,
+      email: input.email,
+      phone: input.phone,
+      role: "student",
+      createdAt: now,
+      updatedAt: now,
+      emailVerifiedAt: now,
+    }),
+  });
+  if (!userRes.ok) throw new Error(`User create failed: ${userRes.status} ${await userRes.text()}`);
+
+  const profileRes = await fetch(`${supabaseUrl}/rest/v1/StudentProfile`, {
+    method: "POST",
+    headers: restHeaders({ Prefer: "return=minimal" }),
+    body: JSON.stringify({
+      id: crypto.randomUUID(),
+      userId: input.id,
+      fullName: input.fullName,
+      dateOfBirth: input.dateOfBirth?.toISOString() ?? null,
+      currentGrade: input.currentGrade,
+      school: input.school,
+    }),
+  });
+  if (!profileRes.ok) throw new Error(`StudentProfile create failed: ${profileRes.status} ${await profileRes.text()}`);
+}
+
 export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: string }>> {
   try {
     const parsed = signupSchema.parse(input);
     const email = parsed.email.trim().toLowerCase();
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await findUserByEmail(email);
     if (existing) return { success: false, error: "An account with this email already exists." };
 
     const authUser = await createUserWithAdmin({
@@ -29,36 +92,15 @@ export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: 
       return { success: false, error: "Could not create account. Please try again." };
     }
 
-    const userData = {
+    await createStudentUserRecord({
       id: authUser.id,
       email,
       phone: parsed.phone,
-      role: "student",
-      emailVerifiedAt: new Date(),
-      studentProfile: {
-        create: {
-          fullName: parsed.fullName,
-          dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null,
-          currentGrade: parsed.currentGrade,
-          school: parsed.school,
-        },
-      },
-    };
-
-    // The first database connection on a serverless cold start can fail while
-    // the pool is being established. Retry once before reporting signup failure.
-    let lastDatabaseError: unknown;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        await prisma.user.create({ data: userData });
-        lastDatabaseError = undefined;
-        break;
-      } catch (error) {
-        lastDatabaseError = error;
-        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
-      }
-    }
-    if (lastDatabaseError) throw lastDatabaseError;
+      fullName: parsed.fullName,
+      dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null,
+      currentGrade: parsed.currentGrade,
+      school: parsed.school,
+    });
 
     // Admin API creation does not establish the browser session. Sign the new
     // user in through the SSR client so the dashboard redirect is authenticated.
