@@ -7,6 +7,7 @@ import { useSession } from "@/hooks/useSession";
 import { motion } from "framer-motion";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { getAlumniBookings } from "@/actions/booking.actions";
+import { getCurrentAlumniReviewStatus } from "@/actions/alumni-status.actions";
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Sidebar } from "@/components/Sidebar";
@@ -175,11 +176,21 @@ function AlumniDashboardContent() {
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status !== "authenticated") return;
-    getAlumniBookings()
-      .then(setBookings)
+    if (session?.user?.role !== "alumnus") { router.push("/dashboard"); return; }
+    getCurrentAlumniReviewStatus()
+      .then((review) => {
+        if (review.status !== "approved") {
+          router.push(review.redirectTo);
+          return null;
+        }
+        return getAlumniBookings();
+      })
+      .then((items) => {
+        if (items) setBookings(items);
+      })
       .catch(() => setBookings([]))
       .finally(() => setLoading(false));
-  }, [status, router]);
+  }, [status, session?.user?.role, router]);
 
   const now = Date.now();
 

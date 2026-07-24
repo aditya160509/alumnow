@@ -3,6 +3,18 @@ import { randomBytes } from "node:crypto";
 import { getServerSession } from "@/lib/supabase-auth";
 import { prisma } from "@/lib/prisma";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function restHeaders(extra?: HeadersInit): HeadersInit {
+  return {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    "Content-Type": "application/json",
+    ...extra,
+  };
+}
+
 async function guard() {
   const session = await getServerSession();
   if (!session?.user?.id || session.user.role !== "admin") throw new Error("Admin access required.");
@@ -29,30 +41,29 @@ export async function getAllAlumni(opts?: {
   await guard();
   const page = opts?.page ?? 1;
   const pageSize = opts?.pageSize ?? 20;
-  const where: Record<string, any> = {};
-  if (opts?.search) {
-    where.OR = [
-      { fullName: { contains: opts.search } },
-      { bio: { contains: opts.search } },
-    ];
-  }
+  const params = new URLSearchParams({
+    select: "*,user:User(email,phone),sessionTypes:SessionTypeOffering(*),availability:AlumniAvailability(*)",
+    order: "createdAt.desc",
+    offset: String((page - 1) * pageSize),
+    limit: String(pageSize),
+  });
   if (opts?.status && opts.status.toLowerCase() !== "all") {
-    where.verificationStatus = opts.status.toLowerCase();
+    params.set("verificationStatus", `eq.${opts.status.toLowerCase()}`);
   }
-  const [items, total] = await Promise.all([
-    prisma.alumniProfile.findMany({
-      where,
-      include: {
-        user: { select: { email: true, phone: true } },
-        sessionTypes: true,
-        availability: true,
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.alumniProfile.count({ where }),
-  ]);
+  if (opts?.search?.trim()) {
+    const term = opts.search.trim().replaceAll("%", "\\%");
+    params.set("or", `(fullName.ilike.*${term}*,bio.ilike.*${term}*)`);
+  }
+
+  const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?${params.toString()}`, {
+    headers: restHeaders({ Prefer: "count=exact" }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Failed to load alumni: ${res.status} ${await res.text()}`);
+
+  const items = await res.json();
+  const range = res.headers.get("content-range") ?? "";
+  const total = Number(range.split("/")[1] ?? items.length);
   return { items, total, totalPages: Math.ceil(total / pageSize), page };
 }
 
@@ -66,7 +77,15 @@ export async function updateAlumniProfile(id: string, data: {
   country?: string
 }) {
   await guard();
-  return prisma.alumniProfile.update({ where: { id }, data });
+  const payload = { ...data, updatedAt: new Date().toISOString() };
+  const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: restHeaders({ Prefer: "return=representation" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to update alumni: ${res.status} ${await res.text()}`);
+  const rows = await res.json();
+  return rows[0];
 }
 
 export async function createAlumniProfile(data: {
@@ -120,7 +139,14 @@ export async function createAlumniProfile(data: {
 
 export async function toggleAlumniActive(id: string, isActive: boolean) {
   await guard();
-  return prisma.alumniProfile.update({ where: { id }, data: { isActive } });
+  const res = await fetch(`${supabaseUrl}/rest/v1/AlumniProfile?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: restHeaders({ Prefer: "return=representation" }),
+    body: JSON.stringify({ isActive, updatedAt: new Date().toISOString() }),
+  });
+  if (!res.ok) throw new Error(`Failed to update alumni: ${res.status} ${await res.text()}`);
+  const rows = await res.json();
+  return rows[0];
 }
 
 export async function getAllBookings(opts?: {

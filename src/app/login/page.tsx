@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LoaderCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { signIn } from "@/hooks/useSession";
+import { getCurrentAlumniReviewStatus } from "@/actions/alumni-status.actions";
 
 export default function LoginPage() {
   const [pending, setPending] = useState(false);
@@ -26,7 +27,12 @@ export default function LoginPage() {
     }
 
     const role = (result.data?.user?.user_metadata?.role as string | undefined) ?? "student";
-    window.location.replace(role === "alumnus" ? "/alumni/dashboard" : role === "admin" ? "/admin" : "/dashboard");
+    if (role === "alumnus") {
+      const review = await getCurrentAlumniReviewStatus();
+      window.location.replace(review.redirectTo);
+      return;
+    }
+    window.location.replace(role === "admin" ? "/admin" : "/dashboard");
   };
 
   return (
