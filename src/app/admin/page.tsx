@@ -23,12 +23,20 @@ async function getStats() {
 }
 
 export default async function AdminDashboardPage() {
-  const statsData = await getStats().catch(() => null);
+  let statsData = null;
+  let statsError: string | null = null;
+  try {
+    statsData = await getStats();
+  } catch (e) {
+    statsError = e instanceof Error ? e.message : String(e);
+    console.error("AdminDashboard data error:", statsError);
+  }
   if (!statsData) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <h2 className="text-2xl font-semibold text-white font-heading">Dashboard unavailable</h2>
-        <p className="mt-2 text-white/40">Could not load dashboard data. Please try again.</p>
+        <p className="mt-2 text-white/40">Could not load dashboard data.</p>
+        {statsError && <p className="mt-2 text-xs text-red-400 font-mono max-w-md">{statsError}</p>}
       </div>
     );
   }

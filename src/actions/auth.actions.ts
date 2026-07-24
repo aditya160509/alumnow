@@ -77,8 +77,9 @@ export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: 
     if (error instanceof ZodError) {
       return { success: false, error: error.issues[0]?.message ?? "Please check your details." };
     }
-    console.error("signup error:", error);
-    return { success: false, error: "Something went wrong. Please try again." };
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("signup error:", msg, error);
+    return { success: false, error: `Something went wrong: ${msg}` };
   }
 }
 
@@ -184,8 +185,9 @@ export async function signupAlumni(input: {
     }
     return { success: true, data: { redirectTo: "/alumni/dashboard" } };
   } catch (error) {
-    console.error("signupAlumni failed", error);
-    return { success: false, error: "Could not submit application. Please try again." };
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("signupAlumni failed:", msg, error);
+    return { success: false, error: `Could not submit application: ${msg}` };
   }
 }
 

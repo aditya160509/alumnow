@@ -25,7 +25,7 @@ export async function createUserWithAdmin(opts: {
     });
     if (!res.ok) {
       const body = await res.text();
-      console.error("Admin createUser failed:", res.status, body);
+      console.error("Admin createUser failed:", res.status, res.statusText, body);
       return null;
     }
     const data = await res.json();
