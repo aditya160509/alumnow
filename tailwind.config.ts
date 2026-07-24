@@ -57,11 +57,31 @@ const config: Config = {
           800: "#8B2E1C",
           900: "#682315",
         },
-        background: "#0D0D0D",
-        foreground: "#FFFFFF",
-        border: "#2A2A2A",
-        input: "#2A2A2A",
-        ring: "#E8573A",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
       },
       fontFamily: {
         sans: ["Inter", "var(--font-inter)", "system-ui", "sans-serif"],
