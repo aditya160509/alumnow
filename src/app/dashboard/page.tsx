@@ -11,6 +11,7 @@ import { CountdownTimer } from "@/components/CountdownTimer";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import {
   CalendarDays, ArrowRight, Star, GraduationCap,
   Clock, Award, Sparkles, Search, TrendingUp,
@@ -478,11 +479,11 @@ function DashboardContent() {
       <div className="ml-0 min-h-screen">
         <div className="p-6 max-w-[1400px]">
           {/* ─── Hero Banner ─── */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.2, 0, 0.1, 1] }}
-            className="relative overflow-hidden rounded-[16px] bg-[#0F0F10] p-6 mb-6"
+          <ScrollReveal
+            y={12}
+            duration={0.6}
+            start="top 95%"
+            className="relative overflow-hidden rounded-[16px] bg-[#0F0F10] p-6 mb-6 block"
           >
             <div className="absolute inset-0 aurora-mesh" />
             <div className="absolute inset-0 bg-gradient-to-tr from-[#0F0F10]/80 via-transparent to-[#E8573A]/20" />
@@ -517,7 +518,7 @@ function DashboardContent() {
               )}
               <SearchTrigger onClick={() => setSearchOpen(true)} />
             </div>
-          </motion.div>
+          </ScrollReveal>
 
           {/* ─── Insight Callout ─── */}
           {showInsight && (

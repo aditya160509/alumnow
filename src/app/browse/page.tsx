@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, LayoutGrid, Heart, Sparkles, ArrowUpDown, ChevronDown, Clock } from "lucide-react";
 import { SearchOverlay, SearchTrigger } from "@/components/SearchOverlay";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const ITEMS_PER_PAGE = 18;
 
@@ -328,14 +329,14 @@ function BrowsePageContent() {
         <div className="h-full max-w-[1600px] mx-auto px-6 py-5 flex flex-col">
         {/* Header row */}
         <div className="flex items-center justify-between mb-5">
-          <div>
+          <ScrollReveal y={16} duration={0.6} start="top 95%">
             <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-white leading-none">Marketplace</h1>
             <p className="text-[13px] text-white/35 mt-1">
               {totalItems > 0 ? (
                 <><span className="text-white/65 font-medium tabular-nums">{totalItems}</span> verified alumni</>)
                 : "Browse verified alumni mentors"}
             </p>
-          </div>
+          </ScrollReveal>
           <div className="flex items-center gap-1.5 text-xs text-white/35">
             <ArrowUpDown size={13} />
             <span>Sort:</span>
