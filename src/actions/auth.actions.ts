@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { rateLimit } from "@/lib/rate-limit";
 import { createUserWithAdmin } from "@/lib/supabase-admin";
 import type { ApiResponse } from "@/types";
+import { ZodError } from "zod";
 
 export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: string }>> {
   try {
@@ -73,7 +74,9 @@ export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: 
 
     return { success: true, data: { redirectTo: "/dashboard" } };
   } catch (error) {
-    if (error instanceof Error && "flatten" in error) return { success: false, error: "Please check your details." };
+    if (error instanceof ZodError) {
+      return { success: false, error: error.issues[0]?.message ?? "Please check your details." };
+    }
     console.error("signup error:", error);
     return { success: false, error: "Something went wrong. Please try again." };
   }

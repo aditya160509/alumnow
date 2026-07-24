@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const phoneSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim().replace(/[\s()-]/g, "");
+  if (/^91[0-9]{10}$/.test(trimmed)) return `+${trimmed}`;
+  return trimmed;
+}, z.string().regex(/^(\+91)?[0-9]{10}$/, "Phone must be 10 digits, or start with +91/91 followed by 10 digits"));
+
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
@@ -8,7 +15,7 @@ export const loginSchema = z.object({
 export const signupSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^(\+91)?[0-9]{10}$/, "Phone must be 10 digits (optionally with +91 prefix)"),
+  phone: phoneSchema,
   dateOfBirth: z.coerce.date().optional(),
   currentGrade: z.enum(["AS", "A2", "Other"]),
   school: z.string().min(1).default("JBCN International School Borivali"),
@@ -37,7 +44,7 @@ export const resetPasswordSchema = z.object({
 export const alumniApplicationSchema = z.object({
   fullName: z.string().min(2).max(100),
   email: z.string().email(),
-  phone: z.string().regex(/^(\+91)?[0-9]{10}$/, "Phone must be 10 digits (optionally with +91 prefix)"),
+  phone: phoneSchema,
   password: z.string().min(8, "Password must be at least 8 characters")
     .regex(/[0-9]/, "Password must contain at least 1 number"),
   confirmPassword: z.string().optional(),
@@ -103,7 +110,7 @@ export const paymentRefSchema = z.object({
 export const signupAlumniSchema = z.object({
   fullName: z.string().min(2).max(100),
   email: z.string().email(),
-  phone: z.string().regex(/^(\+91)?[0-9]{10}$/, "Phone must be 10 digits (optionally with +91 prefix)"),
+  phone: phoneSchema,
   password: z.string().min(8, "Password must be at least 8 characters"),
   universityName: z.string().min(2).max(200),
   course: z.string().min(2).max(200),

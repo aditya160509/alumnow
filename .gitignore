@@ -8,3 +8,4 @@ out
 .vercel
 .playwright-cli/
 tsconfig.tsbuildinfo
+.env*
