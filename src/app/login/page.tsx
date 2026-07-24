@@ -1,14 +1,33 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { LoaderCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { loginAction } from "@/actions/auth.actions";
+import { signIn } from "@/hooks/useSession";
 
 export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(loginAction, undefined);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setPending(true);
+
+    const result = await signIn("credentials", { email, password, redirect: false });
+    if (result.error) {
+      setError("Invalid email or password.");
+      setPending(false);
+      return;
+    }
+
+    const role = (result.data?.user?.user_metadata?.role as string | undefined) ?? "student";
+    window.location.replace(role === "alumnus" ? "/alumni/dashboard" : role === "admin" ? "/admin" : "/dashboard");
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0D0D0D]">
@@ -33,7 +52,7 @@ export default function LoginPage() {
                 Sign in to your account
               </p>
 
-              <form action={formAction}>
+              <form onSubmit={submit}>
                 <div className="group flex items-center gap-2 rounded-[1.25rem] border border-white/10 bg-white/5 p-2 transition-all focus-within:border-coral/50 focus-within:ring-2 focus-within:ring-coral/10">
                   <div className="flex-1 pl-2">
                     <label className="block text-[11px] font-semibold uppercase tracking-wider text-white/25">
@@ -42,6 +61,8 @@ export default function LoginPage() {
                     <input
                       type="email"
                       name="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       className="mt-0.5 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/25"
                       placeholder="Enter your email"
@@ -78,6 +99,8 @@ export default function LoginPage() {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="flex-1 bg-transparent px-2 py-1.5 text-sm text-white outline-none placeholder:text-white/25"
                       placeholder="Enter your password"
@@ -97,8 +120,8 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                {state?.error && (
-                  <p className="mt-3 text-sm text-red-400">{state.error}</p>
+                {error && (
+                  <p className="mt-3 text-sm text-red-400">{error}</p>
                 )}
               </form>
             </div>
