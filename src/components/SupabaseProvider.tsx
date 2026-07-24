@@ -30,29 +30,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [session, setSession] = useState<SessionData>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
-  const [supabase] = useState(() => createBrowserClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        if (typeof document === "undefined") return [];
-        return document.cookie.split("; ").filter(Boolean).map((c) => {
-          const sep = c.indexOf("=");
-          return { name: c.slice(0, sep), value: decodeURIComponent(c.slice(sep + 1)) };
-        });
-      },
-      setAll(cookiesToSet) {
-        if (typeof document === "undefined") return;
-        cookiesToSet.forEach(({ name, value, options }) => {
-          let cookie = `${name}=${encodeURIComponent(value)}`;
-          if (options.path) cookie += `; Path=${options.path}`;
-          if (options.domain) cookie += `; Domain=${options.domain}`;
-          if (options.maxAge != null) cookie += `; Max-Age=${options.maxAge}`;
-          if (options.secure) cookie += "; Secure";
-          if (options.sameSite) cookie += `; SameSite=${options.sameSite}`;
-          document.cookie = cookie;
-        });
-      },
-    },
-  }));
+  const [supabase] = useState(() => createBrowserClient(supabaseUrl, supabaseKey));
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
