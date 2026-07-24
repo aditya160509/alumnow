@@ -28,23 +28,36 @@ export async function signup(input: unknown): Promise<ApiResponse<{ redirectTo: 
       return { success: false, error: "Could not create account. Please try again." };
     }
 
-    await prisma.user.create({
-      data: {
-        id: authUser.id,
-        email,
-        phone: parsed.phone,
-        role: "student",
-        emailVerifiedAt: new Date(),
-        studentProfile: {
-          create: {
-            fullName: parsed.fullName,
-            dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null,
-            currentGrade: parsed.currentGrade,
-            school: parsed.school,
-          },
+    const userData = {
+      id: authUser.id,
+      email,
+      phone: parsed.phone,
+      role: "student",
+      emailVerifiedAt: new Date(),
+      studentProfile: {
+        create: {
+          fullName: parsed.fullName,
+          dateOfBirth: parsed.dateOfBirth instanceof Date ? parsed.dateOfBirth : null,
+          currentGrade: parsed.currentGrade,
+          school: parsed.school,
         },
       },
-    });
+    };
+
+    // The first database connection on a serverless cold start can fail while
+    // the pool is being established. Retry once before reporting signup failure.
+    let lastDatabaseError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await prisma.user.create({ data: userData });
+        lastDatabaseError = undefined;
+        break;
+      } catch (error) {
+        lastDatabaseError = error;
+        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    }
+    if (lastDatabaseError) throw lastDatabaseError;
 
     return { success: true, data: { redirectTo: "/dashboard" } };
   } catch (error) {
